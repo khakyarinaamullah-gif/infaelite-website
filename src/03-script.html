@@ -1,0 +1,1073 @@
+
+<!-- Motion libraries (deferred). The page is fully usable if any of them fail to load. -->
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+
+<script>
+/* ==========================================================================
+   INFA ELITE interactions
+   Core UI (menu, services, work previews, process, filters, accordion, dialog,
+   form, reveals) runs on plain DOM APIs. GSAP, ScrollTrigger and Lenis add the
+   motion layer, and every effect has a static fallback.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  /* Project briefs go to the inbox published on the previous INFA ELITE site. The form has no server
+     behind it: it hands a pre-filled draft to the visitor's own email app and says so plainly. */
+  var CONTACT_EMAIL = '{{email}}', CONTACT_PHONE = '{{phone}}', CONTACT_TEL = '{{tel}}';
+
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+  var mq = function (q) { return window.matchMedia(q); };
+  var reduceMotion = mq('(prefers-reduced-motion: reduce)');
+  var finePointer = mq('(hover: hover) and (pointer: fine)');
+  var svcDesktop = mq('(min-width: 1024px)');
+  var lenis = null;
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var clamp = function (v, a, b) { return Math.min(b, Math.max(a, v)); };
+
+  function safe(name, fn) { try { fn(); } catch (err) { console.error('[INFA ELITE] ' + name + ' failed', err); } }
+  function whenVisible(el, on, off, threshold) {
+    if (!el || !('IntersectionObserver' in window)) { if (el) on(); return; }
+    new IntersectionObserver(function (en) { if (en[0].isIntersecting) on(); else if (off) off(); }, { threshold: threshold || 0.35 }).observe(el);
+  }
+
+  /* ---------- Toast ---------- */
+  var toastEl = $('#toast'), toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('is-on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('is-on'); }, 3600);
+  }
+
+  /* ---------- Scroll helpers ---------- */
+  /* Sections already keep their content clear of the fixed header with their own top padding, so a
+     link lands with the section's top at the top of the screen; only content that starts closer to
+     the edge than the header (a card inside a section) is offset. */
+  function navOffset(target) {
+    var clear = $('#nav').getBoundingClientRect().bottom + 16;
+    var pad = target ? parseFloat(getComputedStyle(target).paddingTop) || 0 : 0;
+    return Math.max(0, Math.round(clear - pad));
+  }
+  function scrollToY(y, dur) {
+    if (lenis) lenis.scrollTo(y, { duration: dur || 1.2 });
+    else window.scrollTo({ top: y, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+  }
+  var navHold = 0;   /* while a link scroll runs, the header stays in place */
+  function holdNav(ms) { navHold = Date.now() + (ms || 1500); var n = $('#nav'); if (n) n.classList.remove('is-hidden'); }
+  function scrollToTarget(target) {
+    var top = target.id === 'top';
+    holdNav(1500);
+    if (lenis) {
+      lenis.scrollTo(top ? 0 : target, { offset: top ? 0 : -navOffset(target), duration: 1.2 });
+    } else {
+      var y = top ? 0 : target.getBoundingClientRect().top + window.pageYOffset - navOffset(target);
+      window.scrollTo({ top: y, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+    }
+  }
+
+  /* ---------- Reveal on scroll ---------- */
+  function initReveals() {
+    var items = $$('[data-reveal]');
+    if (!('IntersectionObserver' in window) || reduceMotion.matches) {
+      items.forEach(function (el) { el.classList.add('is-in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    items.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- Mobile menu ---------- */
+  var menu = $('#menu'), toggle = $('.nav__toggle');
+  function setMenu(open) {
+    menu.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    document.body.classList.toggle('is-locked', open);
+    if (open) menu.removeAttribute('inert'); else menu.setAttribute('inert', '');
+    if (lenis) { if (open) lenis.stop(); else lenis.start(); }
+    if (open) {
+      var first = $('a', menu);
+      setTimeout(function () { if (first) first.focus({ preventScroll: true }); }, 60);
+    }
+  }
+  function initMenu() {
+    toggle.addEventListener('click', function () { setMenu(!menu.classList.contains('is-open')); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && menu.classList.contains('is-open')) { setMenu(false); toggle.focus(); }
+      if (e.key !== 'Tab' || !menu.classList.contains('is-open')) return;
+      var f = [toggle].concat($$('a,button', menu)), first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+    mq('(min-width: 1024px)').addEventListener('change', function (e) { if (e.matches) setMenu(false); });
+  }
+
+  /* ---------- Header: hides while reading down, returns on any scroll up ----------
+     At the top of the page it always shows. It also stays while the menu is open, while it holds
+     keyboard focus and while a link is scrolling the page. At the very top the panes are clear; over a
+     light section panes and labels switch to ink. One rAF-throttled passive scroll listener drives it. */
+  function initNavScroll() {
+    var nav = $('#nav'), lights = $$('[data-nav="light"]');
+    if (!nav) return;
+    var lastY = window.pageYOffset, hidden = false, light = false, queued = false;
+    function setHidden(h) { if (h !== hidden) { hidden = h; nav.classList.toggle('is-hidden', h); } }
+    function update() {
+      queued = false;
+      var y = Math.max(0, window.pageYOffset), dy = y - lastY;
+      var open = menu && menu.classList.contains('is-open');
+      var kbd = false;   /* keyboard focus keeps it; a clicked link does not */
+      try { kbd = !!nav.querySelector(':focus-visible'); } catch (e) { kbd = nav.contains(document.activeElement); }
+      var pinned = y < 96 || open || Date.now() < navHold || kbd;
+      if (pinned) { setHidden(false); lastY = y; }
+      else if (Math.abs(dy) >= 8) { setHidden(dy > 0); lastY = y; }
+      var r = nav.getBoundingClientRect(), mid = r.top + r.height / 2, on = false;
+      if (hidden) mid = Math.max(.75 * 16, 0) + r.height / 2;
+      for (var i = 0; i < lights.length && !on; i++) {
+        var b = lights[i].getBoundingClientRect(), nx = lights[i].nextElementSibling;
+        /* the next sheet slides over the bottom of this one: the light part ends where it begins */
+        var end = nx ? Math.min(b.bottom, nx.getBoundingClientRect().top) : b.bottom;
+        on = b.top <= mid && end > mid;
+      }
+      on = on && !open;
+      if (on !== light) { light = on; nav.classList.toggle('is-light', on); }
+      nav.classList.toggle('is-top', y < 80 && !open);
+    }
+    function queue() { if (!queued) { queued = true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', queue, { passive: true });
+    window.addEventListener('resize', queue);
+    nav.addEventListener('focusin', function () { setHidden(false); });
+    if (menu) new MutationObserver(queue).observe(menu, { attributes: true, attributeFilter: ['class'] });
+    update();
+  }
+
+  /* ---------- Active nav link + sliding indicator ---------- */
+  function initNav() {
+    var list = $('.nav__links'), ind = $('.nav__ind'), links = $$('a', list), active = links[0];
+    function place(link) {
+      if (!link || !list.offsetParent) { ind.classList.remove('is-on'); return; }
+      ind.style.setProperty('--x', link.offsetLeft + 'px');
+      ind.style.setProperty('--w', link.offsetWidth + 'px');
+      ind.classList.add('is-on');
+    }
+    function setActive(link) {
+      active = link;
+      links.forEach(function (l) { if (l === link) l.setAttribute('aria-current', 'true'); else l.removeAttribute('aria-current'); });
+      place(link);
+    }
+    links.forEach(function (l) {
+      l.addEventListener('pointerenter', function () { if (finePointer.matches) place(l); });
+      l.addEventListener('focus', function () { place(l); });
+      l.addEventListener('blur', function () { place(active); });
+    });
+    list.addEventListener('pointerleave', function () { place(active); });
+    window.addEventListener('resize', function () { place(active); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { place(active); });
+    /* On a service page the link to the section it belongs to is marked in the markup and stays put. */
+    var fixed = $('a[aria-current]', list);
+    if (fixed) { active = fixed; place(fixed); return; }
+    setActive(links[0]);
+    if (!('IntersectionObserver' in window)) return;
+    var map = { top: '#top', about: '#about', services: '#services', work: '#work', process: '#process', contact: '#contact' };
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var href = map[e.target.id];
+        setActive(href ? links.filter(function (l) { return l.getAttribute('href') === href; })[0] : null);
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    ['top', 'about', 'services', 'work', 'process', 'why', 'stack', 'faq', 'contact'].forEach(function (id) {
+      var sec = document.getElementById(id); if (sec) io.observe(sec);
+    });
+  }
+
+  /* ---------- Hero: the composition only animates while the hero can be seen ---------- */
+  function initHero() {
+    var hero = $('#top');
+    if (!hero || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function (en) { hero.classList.toggle('is-paused', !en[0].isIntersecting); }, { threshold: 0 }).observe(hero);
+  }
+
+  /* ---------- Buttons: the hover fill grows from where the pointer enters ---------- */
+  function initButtons() {
+    if (!finePointer.matches) return;
+    document.addEventListener('pointerover', function (e) {
+      var b = e.target.closest && e.target.closest('.btn');
+      if (!b || b.contains(e.relatedTarget)) return;
+      var r = b.getBoundingClientRect();
+      b.style.setProperty('--fx', (e.clientX - r.left).toFixed(0) + 'px');
+      b.style.setProperty('--fy', (e.clientY - r.top).toFixed(0) + 'px');
+      b.style.setProperty('--fw', r.width.toFixed(0) + 'px');
+    });
+    document.addEventListener('pointerout', function (e) {
+      var b = e.target.closest && e.target.closest('.btn');
+      if (!b || b.contains(e.relatedTarget)) return;
+      var r = b.getBoundingClientRect();
+      b.style.setProperty('--fx', (e.clientX - r.left).toFixed(0) + 'px');
+      b.style.setProperty('--fy', (e.clientY - r.top).toFixed(0) + 'px');
+    });
+  }
+
+  /* ---------- Services: tabbed showcase on desktop, swipe cards on phones ---------- */
+  var svc = { tabs: [], panels: [], dots: [], cur: 0, desktop: false, hoverT: 0, stage: null, count: null, hl: null, index: null };
+  function svcMark(i) {
+    svc.dots.forEach(function (d, n) { if (n === i) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); });
+  }
+  function svcHighlight(tab) {
+    if (!svc.hl) return;
+    if (!tab || !svc.desktop) { svc.hl.classList.remove('is-on'); return; }
+    svc.hl.style.setProperty('--y', tab.offsetTop + 'px');
+    svc.hl.style.setProperty('--h', tab.offsetHeight + 'px');
+    svc.hl.classList.add('is-on');
+  }
+  function svcSelect(i, opts) {
+    opts = opts || {};
+    if (svc.desktop) {
+      if (i !== svc.cur || opts.force) {
+        /* The new picture wipes in from the direction you travelled through the list. */
+        svc.stage.dataset.dir = i < svc.cur ? 'up' : 'down';
+        svc.panels.forEach(function (p, n) {
+          p.classList.toggle('is-prev', !opts.instant && n === svc.cur && n !== i);
+          p.classList.remove('is-active');
+          p.inert = n !== i;
+          if (n !== i) p.setAttribute('aria-hidden', 'true'); else p.removeAttribute('aria-hidden');
+        });
+        void svc.panels[i].offsetWidth;
+        svc.panels[i].classList.remove('is-prev');
+        svc.panels[i].classList.add('is-active');
+      }
+      svc.tabs.forEach(function (t, n) { t.setAttribute('aria-selected', String(n === i)); t.tabIndex = n === i ? 0 : -1; });
+      if (opts.focus) svc.tabs[i].focus({ preventScroll: true });
+      if (svc.count) svc.count.style.setProperty('--i', i);
+      if (!svc.hovering) svcHighlight(svc.tabs[i]);
+    } else {
+      var stage = svc.stage;
+      var left = svc.panels[i].getBoundingClientRect().left - stage.getBoundingClientRect().left + stage.scrollLeft - parseFloat(getComputedStyle(stage).paddingLeft || 0);
+      stage.scrollTo({ left: left, behavior: (opts.instant || reduceMotion.matches) ? 'auto' : 'smooth' });
+      svcMark(i);
+    }
+    svc.cur = i;
+  }
+  function svcMode() {
+    svc.desktop = svcDesktop.matches;
+    var idx = svc.index;
+    if (svc.desktop) {
+      idx.setAttribute('role', 'tablist');
+      idx.setAttribute('aria-label', 'Services');
+      idx.setAttribute('aria-orientation', 'vertical');
+      svc.tabs.forEach(function (t, n) {
+        var p = svc.panels[n];
+        t.setAttribute('role', 'tab');
+        t.id = 'tab-' + p.id;
+        t.setAttribute('aria-controls', p.id);
+      });
+      svc.panels.forEach(function (p) { p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', 'tab-' + p.id); p.classList.remove('is-near'); });
+      svcSelect(svc.cur, { force: true, instant: true });
+    } else {
+      ['role', 'aria-label', 'aria-orientation'].forEach(function (a) { idx.removeAttribute(a); });
+      svc.tabs.forEach(function (t) { ['role', 'aria-selected', 'aria-controls', 'tabindex'].forEach(function (a) { t.removeAttribute(a); }); });
+      svc.panels.forEach(function (p, n) {
+        p.removeAttribute('role');
+        p.setAttribute('aria-labelledby', 'svc-h-' + (n + 1));
+        p.inert = false;
+        p.removeAttribute('aria-hidden');
+        p.classList.remove('is-prev', 'is-active');
+        p.classList.toggle('is-near', n === svc.cur);
+      });
+      svcHighlight(null);
+      svcSelect(svc.cur, { instant: true });
+    }
+  }
+  function initServices() {
+    svc.tabs = $$('.svc__tab');
+    svc.panels = $$('.svc__panel');
+    svc.dots = $$('#svc-dots button');
+    svc.stage = $('#svc-stage');
+    svc.count = $('#svc-count');
+    svc.hl = $('#svc-hl');
+    svc.index = $('#svc-index');
+    svc.tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { svcSelect(i); });
+      t.addEventListener('pointerenter', function (e) {
+        if (!svc.desktop || e.pointerType !== 'mouse') return;
+        svc.hovering = true;
+        svcHighlight(t);
+        clearTimeout(svc.hoverT);
+        svc.hoverT = setTimeout(function () { svcSelect(i); }, 140);
+      });
+      t.addEventListener('pointerleave', function () { clearTimeout(svc.hoverT); });
+      t.addEventListener('keydown', function (e) {
+        if (!svc.desktop) return;
+        var k = e.key, n = null, len = svc.tabs.length;
+        if (k === 'ArrowDown' || k === 'ArrowRight') n = (i + 1) % len;
+        if (k === 'ArrowUp' || k === 'ArrowLeft') n = (i - 1 + len) % len;
+        if (k === 'Home') n = 0;
+        if (k === 'End') n = len - 1;
+        if (n === null) return;
+        e.preventDefault();
+        svcSelect(n, { focus: true });
+      });
+    });
+    svc.index.addEventListener('pointerleave', function () { svc.hovering = false; svcHighlight(svc.tabs[svc.cur]); });
+    svc.dots.forEach(function (d, n) { d.addEventListener('click', function () { svcSelect(n); }); });
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        if (svc.desktop) return;
+        entries.forEach(function (e) {
+          e.target.classList.toggle('is-near', e.isIntersecting);
+          if (e.isIntersecting) { var n = svc.panels.indexOf(e.target); svc.cur = n; svcMark(n); }
+        });
+      }, { root: svc.stage, threshold: 0.6 });
+      svc.panels.forEach(function (p) { io.observe(p); });
+    }
+    svcMode();
+    svcDesktop.addEventListener('change', svcMode);
+    window.addEventListener('resize', function () { if (svc.desktop && !svc.hovering) svcHighlight(svc.tabs[svc.cur]); });
+  }
+
+  /* ---------- Services: animated illustrations ----------
+     Each service has a layered 3D illustration. To keep the page light, a scene is only rendered
+     while it could be seen: on desktop the selected service (and the outgoing one during the wipe),
+     on phones the cards in or beside view, and never while the section is far off screen. A
+     rendered stack is "live" (separated and moving) while it is on screen: on desktop the selected
+     service, keeping the outgoing one live until the wipe has covered it; on phones the card in
+     view. */
+  function initSvcViz() {
+    var stage = $('#svc-stage'), vis = $$('.svx', stage || document);
+    if (!stage || !vis.length) return;
+    var panels = vis.map(function (v) { return v.closest('.svc__panel'); });
+    var hasIO = 'IntersectionObserver' in window;
+    var near = !hasIO, inView = !hasIO, inStage = panels.map(function () { return !hasIO; }), timers = [];
+    var motion = !reduceMotion.matches;
+    function shown(i) {
+      if (!near) return false;
+      var p = panels[i];
+      return svcDesktop.matches ? (p.classList.contains('is-active') || p.classList.contains('is-prev')) : inStage[i];
+    }
+    function want(i) {
+      if (!motion || !inView) return false;
+      return svcDesktop.matches ? panels[i].classList.contains('is-active') : panels[i].classList.contains('is-near');
+    }
+    function sync() {
+      vis.forEach(function (v, i) {
+        v.classList.toggle('is-on', shown(i) || v.classList.contains('is-live'));
+        if (want(i)) { clearTimeout(timers[i]); timers[i] = 0; v.classList.add('is-on', 'is-live'); }
+        else if (v.classList.contains('is-live') && !timers[i]) {
+          timers[i] = setTimeout(function () {
+            timers[i] = 0;
+            if (!want(i)) { v.classList.remove('is-live'); v.classList.toggle('is-on', shown(i)); }
+          }, inView && svcDesktop.matches ? 1100 : 0);
+        }
+      });
+    }
+    stage.classList.add('svx-managed');
+    if (hasIO) {
+      new IntersectionObserver(function (e) { near = e[0].isIntersecting; sync(); }, { rootMargin: '60% 0px' }).observe(stage);
+      new IntersectionObserver(function (e) { inView = e[0].isIntersecting; sync(); }, { threshold: 0.15 }).observe(stage);
+      var cardIO = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { inStage[panels.indexOf(e.target)] = e.isIntersecting; });
+        sync();
+      }, { root: stage, threshold: 0 });
+      panels.forEach(function (p) { cardIO.observe(p); });
+    }
+    if ('MutationObserver' in window) {
+      var mo = new MutationObserver(sync);
+      panels.forEach(function (p) { mo.observe(p, { attributes: true, attributeFilter: ['class'] }); });
+    }
+    svcDesktop.addEventListener('change', sync);
+    sync();
+
+  }
+
+  /* ---------- Concept work + Six stages (reference sections) ---------- */
+  /* Reveal on scroll, with the reference timing. */
+  function initRfReveals() {
+    var items = $$('[data-rf-reveal]');
+    if (!('IntersectionObserver' in window) || reduceMotion.matches) {
+      items.forEach(function (el) { el.classList.add('is-in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    items.forEach(function (el) { io.observe(el); });
+  }
+
+  /* Project dialog. */
+  function initRfProjects() {
+    var dialog = $('#project'), content = $('#project-content'), opener = null;
+    if (!dialog.showModal) { $$('[data-project]').forEach(function (b) { b.addEventListener('click', function () { scrollToTarget($('#contact')); }); }); return; }
+    $$('[data-project]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tpl = document.getElementById('project-' + btn.dataset.project);
+        if (!tpl) return;
+        content.innerHTML = '';
+        content.appendChild(tpl.content.cloneNode(true));
+        /* The live preview's screenshot is embedded once; the dialog borrows it. */
+        $$('img[data-shot-from]', content).forEach(function (img) {
+          var from = $('img[data-shot="' + img.dataset.shotFrom + '"]');
+          if (from) img.src = from.currentSrc || from.src;
+        });
+        var h = $('h2', content); if (h) h.id = 'project-heading';
+        opener = btn;
+        dialog.showModal();
+        dialog.scrollTop = 0;
+        if (lenis) lenis.stop();
+        document.body.classList.add('is-locked');
+      });
+    });
+    $('.rf-project__close', dialog).addEventListener('click', function () { dialog.close(); });
+    dialog.addEventListener('click', function (e) { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', function () {
+      document.body.classList.remove('is-locked');
+      if (lenis) lenis.start();
+      if (opener && document.activeElement === document.body) opener.focus({ preventScroll: true });
+    });
+  }
+
+  /* Cursor badge over project previews (mouse only). */
+  function initRfCursorBadge() {
+    var badge = $('#cursor-badge');
+    if (!finePointer.matches || reduceMotion.matches) return;
+    var x = 0, y = 0, raf = 0;
+    function paint() { raf = 0; badge.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)'; }
+    $$('.rf-case__open').forEach(function (el) {
+      el.addEventListener('pointerenter', function (e) { x = e.clientX; y = e.clientY; paint(); badge.classList.add('is-on'); });
+      el.addEventListener('pointerleave', function () { badge.classList.remove('is-on'); });
+      el.addEventListener('pointermove', function (e) { x = e.clientX; y = e.clientY; if (!raf) raf = requestAnimationFrame(paint); });
+    });
+  }
+
+  /* ---------- Concept work: live store preview ----------
+     Each project shows the real desktop and mobile screenshots, each in its own scroll area, so
+     visitors can scroll them with a wheel, trackpad or finger. Both pages share one progress value:
+     scrolling either frame keeps the other on the same section.
+     With a mouse, hovering plays the preview down the page and leaving rewinds it; the wheel takes
+     over as soon as it is used, but only once the cursor has settled on the preview, so scrolling
+     the page past a project is never caught. On touch screens the preview follows the page scroll
+     until the visitor touches it; from then on it is theirs to scroll. */
+  function initRfShots() {
+    var motion = !reduceMotion.matches, mouse = finePointer.matches;
+    var lastPageWheel = 0;
+    if (mouse) window.addEventListener('wheel', function (e) {
+      if (!(e.target.closest && e.target.closest('.rf-shots.is-engaged'))) lastPageWheel = performance.now();
+    }, { passive: true, capture: true });
+
+    $$('[data-shots]').forEach(function (vis) {
+      var shots = $$('img[data-shot]', vis).map(function (img) { return { img: img, sc: img.parentNode, travel: 0, set: -1 }; });
+      var bar = $('.rf-site__progress', vis), open = $('.rf-case__open', vis);
+      var item = vis.closest('.rf-case'), next = item && item.nextElementSibling;
+      var touch = !mouse;
+      var p = 0, v = 0, target = 0, raf = 0, last = 0, intent = 0, engageT = 0;
+      var hovering = false, focused = false, near = true, sticky = false, gap = 0, itemH = 0, visOff = 0;
+      var manual = false, engaged = false;
+      /* Mouse: about seven seconds from hero to footer with a soft start and stop; a full rewind takes about one. */
+      var FWD_V = 1 / 6.2, FWD_A = FWD_V / 0.9, BACK_V = 1 / 0.8, BACK_A = BACK_V / 0.3;
+
+      function measure() {
+        shots.forEach(function (s) { s.travel = Math.max(0, s.sc.scrollHeight - s.sc.clientHeight); });
+        sticky = !!next && getComputedStyle(item).position === 'sticky';
+        gap = parseFloat(getComputedStyle(item.parentNode).rowGap) || 0;
+        itemH = item.offsetHeight;
+        visOff = vis.offsetTop + (vis.offsetParent && vis.offsetParent !== item ? vis.offsetParent.offsetTop : 0);
+        paint();
+      }
+      /* Writes the shared progress into every frame except the one the visitor is scrolling. */
+      function paint(skip) {
+        shots.forEach(function (s) {
+          if (s === skip) return;
+          var y = p * s.travel;
+          if (Math.abs(s.sc.scrollTop - y) >= 0.5) { s.set = y; s.sc.scrollTop = y; }
+        });
+        if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+      }
+      /* A scroll that the script did not write came from the visitor. */
+      shots.forEach(function (s) {
+        s.sc.addEventListener('scroll', function () {
+          if (Math.abs(s.sc.scrollTop - s.set) < 1.5) return;
+          s.set = -1;
+          takeOver();
+          p = s.travel ? clamp(s.sc.scrollTop / s.travel, 0, 1) : 0;
+          target = p;
+          paint(s);
+        }, { passive: true });
+      });
+      function takeOver() {
+        manual = true; v = 0;
+        if (raf) { cancelAnimationFrame(raf); raf = 0; last = 0; }
+      }
+      /* Touch: the hero holds until the whole preview is on screen, then the page runs through as
+         the preview crosses the screen, easing in and out. When the card is pinned in the stack, its
+         unpinned position is read from the next project, which still moves with the page. */
+      function fromScroll() {
+        var vh = window.innerHeight || 1, h = vis.offsetHeight;
+        var top = sticky ? next.getBoundingClientRect().top - gap - itemH + visOff : vis.getBoundingClientRect().top;
+        var start = Math.min(vh * 0.72, vh - h), end = -h * (sticky ? 0.4 : 0.85);
+        var t = clamp((start - top) / (start - end), 0, 1);
+        return t * t * (3 - 2 * t);
+      }
+      function tick(now) {
+        raf = 0;
+        if (manual) { last = 0; return; }
+        var dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+        last = now;
+        if (touch) {
+          target = fromScroll();
+          p += (target - p) * (1 - Math.exp(-dt / 0.14));
+          if (Math.abs(target - p) < 0.0005) p = target;
+        } else if (p !== target || v) {
+          /* Speed builds and settles smoothly, and a change of direction keeps the current momentum. */
+          var dir = target > p ? 1 : -1;
+          var vmax = dir > 0 ? FWD_V : BACK_V, acc = dir > 0 ? FWD_A : BACK_A;
+          if (v * dir < 0) acc = BACK_A;
+          var want = dir * Math.min(vmax, Math.sqrt(2 * acc * Math.abs(target - p)));
+          v += clamp(want - v, -acc * dt, acc * dt);
+          p += v * dt;
+          if ((target - p) * dir <= 0) { p = target; v = 0; }
+          p = clamp(p, 0, 1);
+        }
+        paint();
+        if (p !== target || v) raf = requestAnimationFrame(tick);
+        else last = 0;
+      }
+      function run() { if (motion && !manual && !raf) raf = requestAnimationFrame(tick); }
+      function aim() {
+        target = hovering || focused ? 1 : 0;
+        run();
+      }
+      function engage(on) {
+        if (engaged === on) return;
+        engaged = on;
+        vis.classList.toggle('is-engaged', on);
+        shots.forEach(function (s) { if (on) s.sc.setAttribute('data-lenis-prevent', ''); else s.sc.removeAttribute('data-lenis-prevent'); });
+      }
+      /* The wheel belongs to the preview once the cursor has rested on it and the page is not being scrolled. */
+      function tryEngage() {
+        clearTimeout(engageT);
+        if (!hovering) return;
+        var wait = 400 - (performance.now() - lastPageWheel);
+        if (wait <= 0) engage(true);
+        else engageT = setTimeout(tryEngage, wait + 20);
+      }
+
+      if (touch) {
+        var kick = function () { if (near) run(); };
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(function (en) { near = en[0].isIntersecting; kick(); }, { rootMargin: '25% 0px' }).observe(vis);
+        }
+        window.addEventListener('scroll', kick, { passive: true });
+        /* The first touch on a frame hands the preview to the visitor. */
+        shots.forEach(function (s) { s.sc.addEventListener('touchstart', takeOver, { passive: true }); });
+      } else {
+        vis.classList.add('rf-shots--gated');
+        vis.addEventListener('pointerenter', function (e) {
+          if (e.pointerType === 'touch') return;
+          clearTimeout(intent);
+          /* A short pause filters out a cursor passing over; a preview already in motion turns straight back. */
+          if (p > 0 && !manual) { hovering = true; aim(); tryEngage(); }
+          else intent = setTimeout(function () { hovering = true; manual = false; aim(); tryEngage(); }, 120);
+        });
+        vis.addEventListener('pointermove', function (e) { if (e.pointerType !== 'touch' && hovering && !engaged) tryEngage(); });
+        vis.addEventListener('pointerleave', function (e) {
+          if (e.pointerType === 'touch') return;
+          clearTimeout(intent); clearTimeout(engageT);
+          hovering = false; engage(false);
+          manual = false; aim();
+        });
+        /* A touch on a mouse-first device (a touchscreen laptop) scrolls the frame directly. */
+        vis.addEventListener('pointerdown', function (e) { if (e.pointerType === 'touch') { engage(true); takeOver(); } });
+        /* At either end of a frame the wheel goes straight back to the page (dropping the opt-out before
+           the smooth-scroll handler sees this event), so a visitor is never stuck inside a preview. */
+        vis.addEventListener('wheel', function (e) {
+          if (!engaged || !e.deltaY) return;
+          var sc = e.target.closest && e.target.closest('.rf-site__scroll,.rf-phone__scroll');
+          if (!sc) return;
+          var max = sc.scrollHeight - sc.clientHeight;
+          if ((e.deltaY > 0 && sc.scrollTop >= max - 1) || (e.deltaY < 0 && sc.scrollTop <= 1)) {
+            engage(false); lastPageWheel = performance.now(); tryEngage();
+          } else takeOver();
+        }, { passive: true });
+        /* Keyboard focus on the preview plays it too. */
+        open.addEventListener('focus', function () {
+          var visible = true;
+          try { visible = open.matches(':focus-visible'); } catch (err) { /* older browsers */ }
+          if (visible) { focused = true; manual = false; aim(); }
+        });
+        open.addEventListener('blur', function () { if (focused) { focused = false; aim(); } });
+      }
+
+      if ('ResizeObserver' in window) new ResizeObserver(function () { measure(); if (touch) run(); }).observe(vis);
+      else window.addEventListener('resize', measure);
+      shots.forEach(function (s) { if (!s.img.complete) s.img.addEventListener('load', measure); });
+      measure();
+    });
+  }
+
+  /* ---------- Six stages: animated stage visuals ----------
+     Each stage has its own animated illustration. A visual runs only while it can be seen: in the
+     stepper that is the active stage (the outgoing one keeps moving until the wipe has covered it);
+     in the card layout, any card on screen. Everything else holds its frame. */
+  function initRfViz() {
+    var sec = $('#process'), media = $$('[data-viz]', sec || document);
+    if (!sec || !media.length || reduceMotion.matches) return;
+    if (!('IntersectionObserver' in window)) { media.forEach(function (m) { m.classList.add('is-playing'); }); return; }
+    var steps = media.map(function (m) { return m.closest('.rf-step'); });
+    var seen = media.map(function () { return false; }), timers = [];
+    function want(i) {
+      if (!seen[i]) return false;
+      return sec.classList.contains('is-stepper') ? steps[i].classList.contains('is-active') : true;
+    }
+    function sync() {
+      media.forEach(function (m, i) {
+        if (want(i)) { clearTimeout(timers[i]); timers[i] = 0; m.classList.add('is-playing'); }
+        else if (m.classList.contains('is-playing') && !timers[i]) {
+          timers[i] = setTimeout(function () { timers[i] = 0; if (!want(i)) m.classList.remove('is-playing'); }, seen[i] ? 1000 : 0);
+        }
+      });
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[media.indexOf(e.target)] = e.isIntersecting; });
+      sync();
+    }, { threshold: 0.3 });
+    media.forEach(function (m) { io.observe(m); });
+    if ('MutationObserver' in window) {
+      var mo = new MutationObserver(sync);
+      mo.observe(sec, { attributes: true, attributeFilter: ['class'] });
+      steps.forEach(function (s) { mo.observe(s, { attributes: true, attributeFilter: ['class'] }); });
+    }
+  }
+
+  /* ---------- Why: each card's scene loops only while the card is on screen ----------
+     Reduced motion shows the finished frame (the CSS keeps the loops off), so nothing to start. */
+  function initWhy() {
+    var scenes = $$('.wv');
+    if (!scenes.length || reduceMotion.matches) return;
+    if (!('IntersectionObserver' in window)) { scenes.forEach(function (s) { s.classList.add('is-live'); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { e.target.classList.toggle('is-live', e.isIntersecting); });
+    }, { threshold: 0.25 });
+    scenes.forEach(function (s) { io.observe(s); });
+  }
+
+  /* ---------- Stack: highlight technologies by area; tiles tilt toward the pointer ---------- */
+  function initStack() {
+    var grid = $('#elements'), btns = $$('[data-filter]'), status = $('#stack-status');
+    var names = { commerce: 'Commerce', cms: 'CMS', front: 'Front end', data: 'Data and APIs' };
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var f = b.dataset.filter, matches = [], k = 0;
+        btns.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        grid.classList.toggle('is-filtered', f !== 'all');
+        $$('.el', grid).forEach(function (el) {
+          var on = f !== 'all' && el.dataset.cat === f;
+          el.classList.toggle('is-match', on);
+          el.style.setProperty('--i', on ? k++ : 0);
+          if (on) matches.push($('.el__name', el).textContent);
+        });
+        status.textContent = f === 'all' ? 'Showing all technologies.' : names[f] + ': ' + matches.join(', ') + '.';
+      });
+    });
+    if (!finePointer.matches || reduceMotion.matches) return;
+    $$('.el', grid).forEach(function (el) {
+      var over = false;
+      el.addEventListener('pointerenter', function () { over = true; el.classList.add('is-tilt'); });
+      el.addEventListener('pointermove', function (e) {
+        var r = el.getBoundingClientRect(), nx = (e.clientX - r.left) / r.width - 0.5, ny = (e.clientY - r.top) / r.height - 0.5;
+        el.style.setProperty('--rx', (-ny * 16).toFixed(2) + 'deg');
+        el.style.setProperty('--ry', (nx * 16).toFixed(2) + 'deg');
+      });
+      el.addEventListener('pointerleave', function () {
+        over = false;
+        el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg');
+        setTimeout(function () { if (!over) el.classList.remove('is-tilt'); }, 600);
+      });
+    });
+  }
+
+  /* ---------- FAQ accordion ---------- */
+  function initFaq() {
+    var faq = $('#faq');
+    faq.classList.add('is-enhanced');
+    $$('.faq__btn', faq).forEach(function (btn) {
+      var panel = document.getElementById(btn.getAttribute('aria-controls'));
+      btn.addEventListener('click', function () {
+        var open = btn.getAttribute('aria-expanded') !== 'true';
+        btn.setAttribute('aria-expanded', String(open));
+        panel.classList.toggle('is-open', open);
+      });
+    });
+  }
+
+  /* ---------- Placeholder links ---------- */
+  function initPlaceholders() {
+    $$('[data-placeholder]').forEach(function (b) {
+      b.addEventListener('click', function () { toast('Placeholder: the ' + b.dataset.placeholder + ' has not been added yet.'); });
+    });
+  }
+
+  /* ---------- Brief form: validates, then opens a pre-filled email ---------- */
+  function initForm() {
+    var form = $('#brief'), status = $('#brief-status');
+    /* A service page can link here with ?service=..., which picks that service in the form. */
+    var want = window.URLSearchParams ? new URLSearchParams(location.search).get('service') : null;
+    if (want) $$('#f-type option').forEach(function (o) { if (o.textContent === want) $('#f-type').value = o.value; });
+    var rules = [
+      { el: $('#f-name'), err: $('#e-name'), test: function (v) { return v.trim().length > 1; }, msg: 'Enter your name so we know who to reply to.' },
+      { el: $('#f-email'), err: $('#e-email'), test: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }, msg: 'Enter an email address in the format name@company.com.' },
+      { el: $('#f-msg'), err: $('#e-msg'), test: function (v) { return v.trim().length >= 10; }, msg: 'Add a sentence or two about the project.' }
+    ];
+    function check(r) {
+      var ok = r.test(r.el.value);
+      r.el.setAttribute('aria-invalid', String(!ok));
+      r.err.textContent = ok ? '' : r.msg;
+      r.el.closest('.field').classList.toggle('is-valid', ok);
+      return ok;
+    }
+    function shake(el) {
+      var f = el.closest('.field');
+      f.classList.remove('is-shake'); void f.offsetWidth; f.classList.add('is-shake');
+    }
+    rules.forEach(function (r) {
+      r.el.addEventListener('blur', function () { if (r.el.value) check(r); });
+      r.el.addEventListener('input', function () {
+        if (r.el.getAttribute('aria-invalid') === 'true' || r.el.closest('.field').classList.contains('is-valid')) check(r);
+      });
+    });
+    form.addEventListener('animationend', function (e) { var f = e.target.closest('.field'); if (f) f.classList.remove('is-shake'); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var firstBad = null;
+      rules.forEach(function (r) { if (!check(r)) { shake(r.el); if (!firstBad) firstBad = r.el; } });
+      if (firstBad) { status.hidden = true; firstBad.focus(); return; }
+      var name = $('#f-name').value.trim(), type = $('#f-type').value;
+      var subject = 'Project brief: ' + type + ' (' + name + ')';
+      var body = 'Name: ' + name + '\nEmail: ' + $('#f-email').value.trim() + '\nService: ' + type + '\n\n' + $('#f-msg').value.trim();
+      var href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      status.hidden = false;
+      status.innerHTML = 'Your email app should open with this brief addressed to ' + CONTACT_EMAIL + '. <strong>It has not been sent yet</strong>: press send there to deliver it. If nothing opened, <a href="' + href.replace(/"/g, '&quot;') + '">open the draft again</a>, email ' + '<a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a> or call <a href="tel:' + CONTACT_TEL + '">' + CONTACT_PHONE + '</a>.';
+      form.classList.add('is-sent');
+      window.location.href = href;
+    });
+  }
+
+  /* ---------- Pointer spotlight on glass panels ---------- */
+  function initSpotlight() {
+    if (!finePointer.matches) return;
+    $$('.spot').forEach(function (el) {
+      var raf = 0, x = 0, y = 0;
+      el.addEventListener('pointermove', function (e) {
+        var r = el.getBoundingClientRect(); x = e.clientX - r.left; y = e.clientY - r.top;
+        if (!raf) raf = requestAnimationFrame(function () { raf = 0; el.style.setProperty('--mx', x + 'px'); el.style.setProperty('--my', y + 'px'); });
+      });
+    });
+  }
+
+  /* ---------- In-page links ---------- */
+  function initAnchors() {
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      var id = a.getAttribute('href').slice(1);
+      var target = id ? document.getElementById(id) : null;
+      if (!target) return;
+      e.preventDefault();
+      if (a.hasAttribute('data-close')) { var d = $('#project'); if (d.open) d.close(); }
+      if (menu.classList.contains('is-open')) setMenu(false);
+      if (a.dataset.service) {
+        var sel = $('#f-type');
+        $$('option', sel).forEach(function (o) { if (o.textContent === a.dataset.service) sel.value = o.value; });
+      }
+      var dest = target, si = svc.panels.indexOf(target);
+      if (si > -1) { svcSelect(si, { instant: !svc.desktop }); dest = $('#services'); }
+      history.pushState(null, '', '#' + id);
+      requestAnimationFrame(function () { scrollToTarget(dest); });
+    });
+    /* Deep link straight to a service, e.g. /#wordpress */
+    var initial = location.hash.slice(1), el = initial ? document.getElementById(initial) : null;
+    var si = el ? svc.panels.indexOf(el) : -1;
+    if (si > -1) {
+      svcSelect(si, { instant: true, force: true });
+      window.addEventListener('load', function () { scrollToTarget($('#services')); });
+    }
+  }
+
+  /* ---------- Motion system (GSAP + ScrollTrigger + Lenis) ---------- */
+  function splitWords(el) {
+    /* Wrap each word in a mask. Child elements (the underline swash) stay whole. */
+    var label = el.textContent.replace(/\s+/g, ' ').trim(), out = [];
+    Array.prototype.slice.call(el.childNodes).forEach(function (node) {
+      if (node.nodeType === 3) {
+        node.textContent.split(/(\s+)/).forEach(function (part) {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { out.push(document.createTextNode(' ')); return; }
+          var m = document.createElement('span'), i = document.createElement('span');
+          m.className = 'sw'; i.textContent = part; m.appendChild(i); out.push(m);
+        });
+      } else {
+        var m2 = document.createElement('span'), i2 = document.createElement('span');
+        m2.className = 'sw'; i2.appendChild(node); m2.appendChild(i2); out.push(m2);
+      }
+    });
+    el.textContent = '';
+    out.forEach(function (n) { el.appendChild(n); });
+    el.setAttribute('aria-label', label);
+    $$('.sw', el).forEach(function (s) { s.setAttribute('aria-hidden', 'true'); });
+    return $$('.sw > span', el);
+  }
+
+  function initMotion() {
+    var gsap = window.gsap, ScrollTrigger = window.ScrollTrigger;
+    if (!gsap || !ScrollTrigger) { document.documentElement.classList.add('no-gsap'); return; }
+    gsap.registerPlugin(ScrollTrigger);
+    var EXPO = 'expo.out', INOUT = 'expo.inOut';
+    var once = function (trigger, start) { return { trigger: trigger, start: start || 'top 84%', once: true }; };
+
+    gsap.to('.progress', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 0.3 } });
+
+    var mm = gsap.matchMedia();
+
+    /* Six stages (reference): on large screens the stages become a scroll-driven stepper.
+       One image stage on the left, the active stage expands in glass on the right. */
+    mm.add('(min-width: 1100px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)', function () {
+      var sec = $('#process'), scroller = $('#process-scroll');
+      if (!sec || !scroller) return;
+      var steps = $$('.rf-step', sec), bar = $('.rf-process__rail i');
+      var stage = $('.rf-process__sticky', sec);
+      /* the stage pins at its CSS top (centred under the header); the steps advance while it is pinned */
+      function pinTop() { return parseFloat(getComputedStyle(stage).top) || 0; }
+      var cur = 0;
+      sec.classList.add('is-stepper');
+      function setStep(i) {
+        if (i === cur) return;
+        steps.forEach(function (s, n) { s.classList.toggle('is-prev', n === cur); s.classList.remove('is-active'); });
+        void steps[i].offsetWidth;
+        steps[i].classList.remove('is-prev');
+        steps[i].classList.add('is-active');
+        cur = i;
+      }
+      var st = ScrollTrigger.create({
+        trigger: scroller, invalidateOnRefresh: true,
+        start: function () { return 'top ' + pinTop() + 'px'; },
+        end: function () { return 'bottom ' + (pinTop() + stage.offsetHeight) + 'px'; },
+        onUpdate: function (self) {
+          setStep(Math.min(steps.length - 1, Math.floor(self.progress * steps.length)));
+          if (bar) bar.style.transform = 'scaleX(' + self.progress + ')';
+        }
+      });
+      var handlers = steps.map(function (s, i) {
+        var fn = function () {
+          var y = st.start + (st.end - st.start) * ((i + 0.5) / steps.length);
+          if (lenis) lenis.scrollTo(y, { duration: 1 }); else window.scrollTo({ top: y, behavior: 'smooth' });
+        };
+        $('.rf-step__body', s).addEventListener('click', fn);
+        return fn;
+      });
+      return function () {
+        steps.forEach(function (s, i) {
+          $('.rf-step__body', s).removeEventListener('click', handlers[i]);
+          s.classList.remove('is-prev');
+          s.classList.toggle('is-active', i === 0);
+        });
+        sec.classList.remove('is-stepper');
+      };
+    });
+
+    /* Concept work (reference): projects pin as a stack (CSS sticky); the covered card eases back. */
+    mm.add('(min-width: 1024px) and (min-height: 600px) and (prefers-reduced-motion: no-preference)', function () {
+      /* The blocks stay full width; the covered project's content eases back and dims under a shade. */
+      var cases = $$('.rf-work__list .rf-case'), shades = [];
+      cases.forEach(function (c, i) {
+        if (i === cases.length - 1) return;
+        var card = $('.rf-case__card', c), shade = document.createElement('span');
+        shade.className = 'rf-case__shade'; shade.setAttribute('aria-hidden', 'true');
+        card.appendChild(shade); shades.push(shade);
+        var st = function () { return { trigger: cases[i + 1], start: 'top bottom', end: 'top 20%', scrub: true }; };
+        gsap.to([$('.rf-case__visual', card), $('.rf-case__meta', card)], { scale: 0.94, transformOrigin: '50% 0%', ease: 'none', scrollTrigger: st() });
+        gsap.to(shade, { opacity: 0.55, ease: 'none', scrollTrigger: st() });
+      });
+      return function () { shades.forEach(function (s) { s.remove(); }); };
+    });
+
+    /* Large screens: the next sheet slides over the hero while its content drifts back. */
+    mm.add('(min-width: 1024px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)', function () {
+      if (!$('#hero-inner') || !$('#about')) return;
+      gsap.to('#hero-inner', { yPercent: -10, opacity: 0.1, ease: 'none', scrollTrigger: { trigger: '#about', start: 'top bottom', end: 'top 20%', scrub: true } });
+      gsap.to('#hero-model', { yPercent: 4, ease: 'none', scrollTrigger: { trigger: '#about', start: 'top bottom', end: 'top top', scrub: true } });
+      ScrollTrigger.create({ trigger: '#about', start: 'top top', onEnter: function () { $('#top').classList.add('is-covered'); }, onLeaveBack: function () { $('#top').classList.remove('is-covered'); } });
+      return function () { $('#top').classList.remove('is-covered'); };
+    });
+
+    mm.add('(prefers-reduced-motion: no-preference)', function () {
+      /* Smooth scrolling for mouse and trackpad users only. Touch keeps native momentum. */
+      if (window.Lenis && finePointer.matches) {
+        lenis = new window.Lenis({ lerp: 0.1, wheelMultiplier: 1 });
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add(function (t) { if (lenis) lenis.raf(t * 1000); });
+        gsap.ticker.lagSmoothing(0);
+      }
+
+      /* Hero: the portrait settles in while the name rises behind it, then the offer, the trust
+         card and the achievements follow. */
+      if ($('#hero-inner')) gsap.timeline({ delay: 1.1, defaults: { ease: EXPO } })
+        .fromTo('.hero__model', { opacity: 0, y: 46 }, { opacity: 1, y: 0, duration: 1.7, clearProps: 'transform' }, 0.1)
+        .fromTo('[data-hero="name"]', { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 1.5, clearProps: 'transform' }, 0)
+        .fromTo('[data-hero="hi"]', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 1.1, clearProps: 'transform' }, 0.35)
+        .set('.hero__title', { visibility: 'visible' }, 0.55)
+        .fromTo('.hero__line > span', { yPercent: 112 }, { yPercent: 0, duration: 1.2, stagger: 0.09 }, 0.55)
+        .fromTo('[data-hero="copy"]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 1, stagger: 0.12, clearProps: 'transform' }, 0.7)
+        .fromTo('[data-hero="card"]', { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 1.15, clearProps: 'transform' }, 0.85)
+        .fromTo('[data-hero="marquee"]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.1, clearProps: 'transform' }, 1);
+
+      /* Depth: with a mouse, the name and the portrait shift a few pixels apart. */
+      if (finePointer.matches && $('#hero-inner')) {
+        var hero = $('#top');
+        var layers = [['.hero__name', -8], ['.hero__model', 10]].map(function (l) {
+          var el = $(l[0]); if (!el) return null;
+          return { k: l[1], x: gsap.quickTo(el, 'x', { duration: 1.3, ease: 'power3.out' }), y: gsap.quickTo(el, 'y', { duration: 1.3, ease: 'power3.out' }) };
+        }).filter(Boolean);
+        hero.addEventListener('pointermove', function (e) {
+          var nx = e.clientX / window.innerWidth - 0.5, ny = e.clientY / window.innerHeight - 0.5;
+          layers.forEach(function (l) { l.x(nx * l.k); l.y(ny * l.k * 0.6); });
+        });
+      }
+
+      /* Headings: words rise out of a mask; the orange underline draws after them. */
+      $$('[data-split]').forEach(function (el) {
+        var words = splitWords(el), swash = $('.swash path', el);
+        gsap.set(words, { yPercent: 115 });
+        if (swash) gsap.set(swash, { strokeDashoffset: 1 });
+        ScrollTrigger.create({
+          trigger: el, start: 'top 88%', once: true,
+          onEnter: function () {
+            gsap.to(words, { yPercent: 0, duration: 1.15, ease: EXPO, stagger: 0.045 });
+            if (swash) gsap.to(swash, { strokeDashoffset: 0, duration: 1.1, ease: 'power2.inOut', delay: 0.55 + words.length * 0.03 });
+          }
+        });
+      });
+
+      /* About: the statement inks in with scroll; the second picture settles into place. */
+      var stm = $('[data-scrub]');
+      if (stm) {
+        var txt = stm.textContent.trim().replace(/\s+/g, ' ');
+        /* screen readers get the sentence once; the inking words are decoration */
+        stm.innerHTML = '<span class="sr-only">' + txt + '</span>' + txt.split(' ').map(function (w) { return '<span aria-hidden="true">' + w + '</span>'; }).join(' ');
+        gsap.fromTo($$('span[aria-hidden]', stm), { opacity: 0.14 }, { opacity: 1, ease: 'none', stagger: 0.08, scrollTrigger: { trigger: stm, start: 'top 88%', end: 'bottom 62%', scrub: true } });
+      }
+      var second = $('.about__second');
+      if (second) gsap.fromTo(second, { rotate: 9, scale: 0.84 }, { rotate: 0, scale: 1, duration: 1.7, ease: EXPO, scrollTrigger: once(second, 'top 92%') });
+
+      /* Large photographs drift inside their frames. */
+      $$('.about__main img, .faq__media img, .stack__bg img').forEach(function (img) {
+        gsap.fromTo(img, { yPercent: -6, scale: 1.14 }, { yPercent: 6, scale: 1.14, ease: 'none', scrollTrigger: { trigger: img.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
+      });
+
+      /* Floating layers move at their own pace. */
+      $$('[data-float]').forEach(function (el) {
+        var v = Number(el.dataset.float) || 0;
+        gsap.fromTo(el, { y: -v / 2 }, { y: v / 2, ease: 'none', scrollTrigger: { trigger: el.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
+      });
+      /* Concept work phones drift at the reference pace. */
+      $$('[data-rf-float]').forEach(function (el) {
+        var v = Number(el.dataset.rfFloat) || 0;
+        gsap.fromTo(el, { y: -v / 2 }, { y: v / 2, ease: 'none', scrollTrigger: { trigger: el.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
+      });
+
+      /* Why: the four cards rise into place together, one beat apart; captions follow. */
+      $$('.benefit').forEach(function (p, k) {
+        gsap.timeline({ scrollTrigger: once(p, 'top 88%') })
+          .fromTo(p, { y: 56, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: EXPO, delay: (k % 2) * 0.1, clearProps: 'transform,opacity' }, 0)
+          .fromTo($$('.tags li', p), { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.45);
+      });
+
+      /* Technology tiles assemble into the table. */
+      if ($('.el')) gsap.fromTo('.el', { opacity: 0, y: 34, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 1, ease: EXPO, stagger: { each: 0.045, grid: 'auto', from: 'start' }, clearProps: 'transform,opacity', scrollTrigger: once('#elements', 'top 86%') });
+
+      /* FAQ: questions slide in from the left, one after another (never past the right edge on phones). */
+      if ($('.faq__list')) gsap.fromTo('.faq__item', { x: -48, opacity: 0 }, { x: 0, opacity: 1, duration: 1.1, ease: EXPO, stagger: 0.07, clearProps: 'transform,opacity', scrollTrigger: once('.faq__list', 'top 84%') });
+
+      /* Contact: the form panel opens upward, then its fields arrive in order. */
+      var form = $('#brief');
+      if (form) {
+        gsap.timeline({ scrollTrigger: once(form, 'top 84%') })
+          .fromTo(form, { clipPath: 'inset(100% 0% 0% 0% round 24px)' }, { clipPath: 'inset(0% 0% 0% 0% round 24px)', duration: 1.3, ease: INOUT, clearProps: 'clipPath' }, 0)
+          .fromTo($$('.field, .form__note', form).concat($$('button[type="submit"]', form)), { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.4);
+        gsap.fromTo('.contact__details > div', { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: EXPO, stagger: 0.09, clearProps: 'transform,opacity', scrollTrigger: once('.contact__details', 'top 90%') });
+      }
+
+      /* Footer: columns rise in sequence. */
+      gsap.fromTo('.footer__brand, .footer__cols > *', { y: 44, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity', scrollTrigger: once('.footer', 'top 90%') });
+
+      /* Magnetic pull on primary calls to action. */
+      if (finePointer.matches) {
+        $$('[data-magnetic]').forEach(function (b) {
+          var xTo = gsap.quickTo(b, 'x', { duration: 0.6, ease: 'power3.out' });
+          var yTo = gsap.quickTo(b, 'y', { duration: 0.6, ease: 'power3.out' });
+          var ico = $('.btn__icon', b), ix = ico ? gsap.quickTo(ico, 'x', { duration: 0.6, ease: 'power3.out' }) : null;
+          b.addEventListener('pointermove', function (e) {
+            var r = b.getBoundingClientRect(), dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
+            xTo(dx * 0.22); yTo(dy * 0.32); if (ix) ix(dx * 0.06);
+          });
+          b.addEventListener('pointerleave', function () { xTo(0); yTo(0); if (ix) ix(0); });
+        });
+      }
+
+      return function () { if (lenis) { lenis.destroy(); lenis = null; } };
+    });
+
+    window.addEventListener('load', function () { ScrollTrigger.sort(); ScrollTrigger.refresh(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
+
+    /* Content that grows or shrinks after load (FAQ answers, the sent form)
+       moves everything below it, so trigger positions are measured again once the page settles. */
+    if (window.ResizeObserver) {
+      var lastH = document.body.offsetHeight, settle = 0;
+      ScrollTrigger.addEventListener('refresh', function () { lastH = document.body.offsetHeight; });
+      new ResizeObserver(function () {
+        clearTimeout(settle);
+        settle = setTimeout(function () { if (Math.abs(document.body.offsetHeight - lastH) > 2) ScrollTrigger.refresh(); }, 220);
+      }).observe(document.body);
+    }
+  }
+
+  /* ---------- Boot ---------- */
+  function boot() {
+    safe('reveals', initReveals);
+    safe('menu', initMenu);
+    safe('nav', initNav);
+    safe('nav-scroll', initNavScroll);
+    safe('buttons', initButtons);
+    /* The home page carries the interactive sections; the service and policy pages share the rest. */
+    if ($('#svc')) {
+      safe('hero', initHero);
+      safe('services', initServices);
+      safe('service visuals', initSvcViz);
+      safe('reference reveals', initRfReveals);
+      safe('projects', initRfProjects);
+      safe('cursor', initRfCursorBadge);
+      safe('live preview', initRfShots);
+      safe('stage visuals', initRfViz);
+      safe('why', initWhy);
+      safe('stack', initStack);
+      safe('form', initForm);
+    }
+    if ($('#faq')) safe('faq', initFaq);
+    safe('placeholders', initPlaceholders);
+    safe('spotlight', initSpotlight);
+    safe('motion', initMotion);
+    safe('anchors', initAnchors);
+    safe('year', function () { $('#year').textContent = String(new Date().getFullYear()); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+</body>
+</html>
