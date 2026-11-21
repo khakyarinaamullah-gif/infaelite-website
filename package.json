@@ -1,0 +1,9 @@
+{
+  "name": "infaelite-website",
+  "private": true,
+  "description": "Build dependency for the INFA ELITE website: the Lucide icon set the build script inlines.",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "lucide-static": "1.76.0"
+  }
+}
