@@ -1,0 +1,65 @@
+# Builds the site with build.py and publishes dist/ to GitHub Pages on every push to main.
+# Repository settings: Settings > Pages > Build and deployment > Source: "GitHub Actions".
+name: Deploy site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          npm ci --no-audit --no-fund
+
+      - name: Build
+        run: python build.py dist
+
+      - name: Check the build
+        run: |
+          test -f dist/index.html
+          test -f dist/shopify-development/index.html
+          test -f dist/shopify-store-redesign/index.html
+          test -f dist/wordpress-development/index.html
+          test -f dist/privacy-policy/index.html
+          test -f dist/404.html
+          ! grep -rl '{{' dist --include=*.html --include=*.css --include=*.js
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
