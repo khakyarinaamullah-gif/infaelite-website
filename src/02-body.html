@@ -49,7 +49,7 @@
 
   <div class="hero__stage" id="hero-inner">
     <p class="hero__hello"><span class="hero__hi" data-hero="hi">Hi, I am</span> <span class="hero__name" data-hero="name"><span>Inaam</span> <span>Khaksar</span></span></p>
-    <img class="hero__model" id="hero-model" src="{{asset:hero-portrait.webp}}" width="975" height="1496" alt="Inaam Khaksar of INFA ELITE, smiling with arms crossed" fetchpriority="high" decoding="async">
+    <picture class="hero__pic"><source type="image/avif" srcset="{{srcset-avif:hero-portrait}}" sizes="(max-width: 1023px) min(90vw, 470px), min(36vw, 64vh)"><img class="hero__model" id="hero-model" src="{{asset:hero-portrait.webp}}" srcset="{{srcset:hero-portrait.webp}}" sizes="(max-width: 1023px) min(90vw, 470px), min(36vw, 64vh)" width="975" height="1496" alt="Inaam Khaksar of INFA ELITE, smiling with arms crossed" fetchpriority="high" decoding="async"></picture>
     <div class="hero__lower">
       <div class="hero__copy">
         <p class="hero__kicker" data-hero="copy"><i aria-hidden="true"></i>4+ years building stores</p>
@@ -108,11 +108,13 @@
 
       <div class="svc__index" id="svc-index">
         <span class="svc__hl" id="svc-hl" aria-hidden="true"></span>
+        <div class="svc__tabs" id="svc-tabs">
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">01</span><span class="svc__tab-name">Shopify Development</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">02</span><span class="svc__tab-name">Shopify Optimization</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">03</span><span class="svc__tab-name">WordPress Development</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">04</span><span class="svc__tab-name">Custom Development</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">05</span><span class="svc__tab-name">UI/UX &amp; Design</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
+        </div>
         <p class="svc__index-foot">Not sure which you need? <a href="#contact" data-intent="consultation" data-service="Not sure yet">Get expert guidance</a></p>
       </div>
 
@@ -202,12 +204,12 @@
               <span class="rf-site rf-site--shot" aria-hidden="true">
                 <span class="rf-site__bar">veliora</span>
                 <span class="rf-site__view">
-                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="desktop" src="{{asset:veliora-desktop.webp}}" width="1200" height="6809" alt="" decoding="async"></span>
+                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="desktop" src="{{asset:veliora-desktop.webp}}" srcset="{{srcset:veliora-desktop.webp}}" sizes="(max-width: 899px) 100vw, (max-width: 1439px) 54vw, 780px" width="1200" height="6809" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
                 </span>
               </span>
             </button>
-            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="mobile" src="{{asset:veliora-mobile.webp}}" width="374" height="8000" alt="" decoding="async"></span></span>
+            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="mobile" src="{{asset:veliora-mobile.webp}}" srcset="{{srcset:veliora-mobile.webp}}" sizes="(max-width: 899px) 22vw, (max-width: 1439px) 12vw, 170px" width="374" height="8000" alt="" decoding="async"></span></span>
           </div>
           <div class="rf-case__meta">
             <h3 class="rf-case__title">Veliora</h3>
@@ -225,12 +227,12 @@
               <span class="rf-site rf-site--shot" aria-hidden="true">
                 <span class="rf-site__bar">werk</span>
                 <span class="rf-site__view">
-                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="werk-desktop" src="{{asset:werk-desktop.webp}}" width="1200" height="6872" alt="" decoding="async"></span>
+                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="werk-desktop" src="{{asset:werk-desktop.webp}}" srcset="{{srcset:werk-desktop.webp}}" sizes="(max-width: 899px) 100vw, (max-width: 1439px) 54vw, 780px" width="1200" height="6872" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
                 </span>
               </span>
             </button>
-            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="werk-mobile" src="{{asset:werk-mobile.webp}}" width="374" height="6352" alt="" decoding="async"></span></span>
+            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="werk-mobile" src="{{asset:werk-mobile.webp}}" srcset="{{srcset:werk-mobile.webp}}" sizes="(max-width: 899px) 22vw, (max-width: 1439px) 12vw, 170px" width="374" height="6352" alt="" decoding="async"></span></span>
           </div>
           <div class="rf-case__meta">
             <h3 class="rf-case__title">WERK</h3>
@@ -248,12 +250,12 @@
               <span class="rf-site rf-site--shot" aria-hidden="true">
                 <span class="rf-site__bar">hasi</span>
                 <span class="rf-site__view">
-                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="hasi-desktop" src="{{asset:hasi-desktop.webp}}" width="1200" height="7058" alt="" decoding="async"></span>
+                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="hasi-desktop" src="{{asset:hasi-desktop.webp}}" srcset="{{srcset:hasi-desktop.webp}}" sizes="(max-width: 899px) 100vw, (max-width: 1439px) 54vw, 780px" width="1200" height="7058" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
                 </span>
               </span>
             </button>
-            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="hasi-mobile" src="{{asset:hasi-mobile.webp}}" width="237" height="8000" alt="" decoding="async"></span></span>
+            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="hasi-mobile" src="{{asset:hasi-mobile.webp}}" srcset="{{srcset:hasi-mobile.webp}}" sizes="(max-width: 899px) 22vw, (max-width: 1439px) 12vw, 170px" width="237" height="8000" alt="" decoding="async"></span></span>
           </div>
           <div class="rf-case__meta">
             <h3 class="rf-case__title">HASI</h3>
@@ -271,12 +273,12 @@
               <span class="rf-site rf-site--shot" aria-hidden="true">
                 <span class="rf-site__bar">tenton</span>
                 <span class="rf-site__view">
-                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="tenton-desktop" src="{{asset:tenton-desktop.webp}}" width="1200" height="6957" alt="" decoding="async"></span>
+                  <span class="rf-site__scroll"><img class="rf-shot" data-shot="tenton-desktop" src="{{asset:tenton-desktop.webp}}" srcset="{{srcset:tenton-desktop.webp}}" sizes="(max-width: 899px) 100vw, (max-width: 1439px) 54vw, 780px" width="1200" height="6957" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
                 </span>
               </span>
             </button>
-            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="tenton-mobile" src="{{asset:tenton-mobile.webp}}" width="268" height="8000" alt="" decoding="async"></span></span>
+            <span class="rf-phone rf-phone--shot" aria-hidden="true" data-rf-float="-20"><span class="rf-phone__scroll"><img class="rf-shot" data-shot="tenton-mobile" src="{{asset:tenton-mobile.webp}}" srcset="{{srcset:tenton-mobile.webp}}" sizes="(max-width: 899px) 22vw, (max-width: 1439px) 12vw, 170px" width="268" height="8000" alt="" decoding="async"></span></span>
           </div>
           <div class="rf-case__meta">
             <h3 class="rf-case__title">Tenton</h3>
@@ -299,7 +301,7 @@
 
 <!-- Project detail sources (cloned into the dialog) -->
 <template id="project-veliora">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#FFFFFF"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on desktop. Scroll to see the full homepage."><img data-shot-from="desktop" width="1200" height="6809" alt="Veliora homepage on desktop, opening on two women holding makeup brushes" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on mobile. Scroll to see the full homepage."><img data-shot-from="mobile" width="374" height="8000" alt="Veliora homepage on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#FFFFFF"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on desktop. Scroll to see the full homepage."><img data-shot-from="desktop" data-sizes="(max-width: 959px) 96vw, 900px" width="1200" height="6809" alt="Veliora homepage on desktop, opening on two women holding makeup brushes" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on mobile. Scroll to see the full homepage."><img data-shot-from="mobile" data-sizes="(max-width: 959px) 23vw, 212px" width="374" height="8000" alt="Veliora homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>Veliora</h2>
     <p class="rf-lead">A Shopify store design for a beauty and skincare label. The brief: one homepage that feels as considered on a phone as it does on desktop.</p>
@@ -324,7 +326,7 @@
   </div>
 </template>
 <template id="project-werk">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#EEEEEE"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on desktop. Scroll to see the full homepage."><img data-shot-from="werk-desktop" width="1200" height="6872" alt="WERK homepage on desktop, opening on a streetwear campaign photo under the headline Fantastic Fit Clothing" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on mobile. Scroll to see the full homepage."><img data-shot-from="werk-mobile" width="374" height="6352" alt="WERK homepage on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#EEEEEE"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on desktop. Scroll to see the full homepage."><img data-shot-from="werk-desktop" data-sizes="(max-width: 959px) 96vw, 900px" width="1200" height="6872" alt="WERK homepage on desktop, opening on a streetwear campaign photo under the headline Fantastic Fit Clothing" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on mobile. Scroll to see the full homepage."><img data-shot-from="werk-mobile" data-sizes="(max-width: 959px) 23vw, 212px" width="374" height="6352" alt="WERK homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>WERK</h2>
     <p class="rf-lead">A WordPress and WooCommerce store for a streetwear label. The pages lead with big campaign photography, so the theme was planned around fast image delivery first.</p>
@@ -349,7 +351,7 @@
   </div>
 </template>
 <template id="project-hasi">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#262626"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on desktop. Scroll to see the full homepage."><img data-shot-from="hasi-desktop" width="1200" height="7058" alt="HASI homepage on desktop, opening on a hiker with a red backpack under the headline Explore Hiking" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on mobile. Scroll to see the full homepage."><img data-shot-from="hasi-mobile" width="237" height="8000" alt="HASI homepage on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#262626"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on desktop. Scroll to see the full homepage."><img data-shot-from="hasi-desktop" data-sizes="(max-width: 959px) 96vw, 900px" width="1200" height="7058" alt="HASI homepage on desktop, opening on a hiker with a red backpack under the headline Explore Hiking" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on mobile. Scroll to see the full homepage."><img data-shot-from="hasi-mobile" data-sizes="(max-width: 959px) 23vw, 212px" width="237" height="8000" alt="HASI homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>HASI</h2>
     <p class="rf-lead">A Shopify store redesign for a travel and tour agency moving from another platform. The focus is a tour search that filters quickly and package pages that answer the key questions early.</p>
@@ -374,7 +376,7 @@
   </div>
 </template>
 <template id="project-tenton">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#122529"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on desktop. Scroll to see the full homepage."><img data-shot-from="tenton-desktop" width="1200" height="6957" alt="Tenton homepage on desktop, opening on modern apartment buildings under the headline Find your dream home" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on mobile. Scroll to see the full homepage."><img data-shot-from="tenton-mobile" width="268" height="8000" alt="Tenton homepage on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#122529"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on desktop. Scroll to see the full homepage."><img data-shot-from="tenton-desktop" data-sizes="(max-width: 959px) 96vw, 900px" width="1200" height="6957" alt="Tenton homepage on desktop, opening on modern apartment buildings under the headline Find your dream home" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on mobile. Scroll to see the full homepage."><img data-shot-from="tenton-mobile" data-sizes="(max-width: 959px) 23vw, 212px" width="268" height="8000" alt="Tenton homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>Tenton</h2>
     <p class="rf-lead">A custom website development project for a real estate agency. Listing data feeds one property search, so buyers can filter by state, city and neighborhood in a single step.</p>
@@ -653,7 +655,7 @@
       </div>
       <div class="footer__cols">
         <nav aria-label="Footer">
-          <h3>Navigate</h3>
+          <h2 class="footer__h">Navigate</h2>
           <ul>
             <li><a href="#top">Home</a></li>
             <li><a href="#about">About</a></li>
@@ -665,7 +667,7 @@
           </ul>
         </nav>
         <nav aria-label="Services">
-          <h3>Services</h3>
+          <h2 class="footer__h">Services</h2>
           <ul>
             <li><a href="{{root}}shopify-development/">Shopify Development</a></li>
             <li><a href="{{root}}shopify-store-redesign/">Shopify Store Redesign</a></li>
@@ -676,7 +678,7 @@
           </ul>
         </nav>
         <div>
-          <h3>Contact</h3>
+          <h2 class="footer__h">Contact</h2>
           <ul>
             <li><a href="mailto:{{email}}">{{email-wrap}}</a></li>
             <li><a href="tel:{{tel}}">{{phone}}</a></li>
@@ -686,7 +688,7 @@
           </ul>
         </div>
         <div>
-          <h3>Social</h3>
+          <h2 class="footer__h">Social</h2>
           <ul>
             <li><a href="{{linkedin}}" target="_blank" rel="noopener">{{ic:arrow-up-right}}LinkedIn</a></li>
             <li><a href="{{fiverr}}" target="_blank" rel="noopener">{{ic:arrow-up-right}}Fiverr</a></li>

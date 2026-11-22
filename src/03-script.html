@@ -29,9 +29,106 @@
   var clamp = function (v, a, b) { return Math.min(b, Math.max(a, v)); };
 
   function safe(name, fn) { try { fn(); } catch (err) { console.error('[INFA ELITE] ' + name + ' failed', err); } }
+  /* runs fn once the page has loaded, also when the load event has already passed */
+  function onLoad(fn) { if (document.readyState === 'complete') setTimeout(fn, 0); else window.addEventListener('load', fn, { once: true }); }
   function whenVisible(el, on, off, threshold) {
     if (!el || !('IntersectionObserver' in window)) { if (el) on(); return; }
     new IntersectionObserver(function (en) { if (en[0].isIntersecting) on(); else if (off) off(); }, { threshold: threshold || 0.35 }).observe(el);
+  }
+
+  /* ---------- Measurement ----------
+     Events go to the dataLayer for Google Tag Manager (container GTM_ID), which forwards them to GA4.
+     Only what a visitor chose is recorded: which button, which service, which project, which kind of
+     request. Names, email addresses, messages and budgets typed into the form are never collected.
+     The form opens the visitor's email app; that is recorded as inquiry_email_handoff, not as a sent
+     inquiry, because the site cannot know whether the email was sent. */
+  var GTM_ID = '{{gtm}}';
+  var DL_KEYS = ['cta_location', 'cta_text', 'form_intent', 'service_interest', 'contact_method', 'service_name', 'view_type', 'project_name'];
+  function track(name, params) {
+    var o = { event: name };
+    /* every key is set on every event, so a value from an earlier event never leaks into this one */
+    DL_KEYS.forEach(function (k) { o[k] = undefined; });
+    Object.keys(params || {}).forEach(function (k) { var v = params[k]; if (v !== undefined && v !== null && v !== '') o[k] = String(v).slice(0, 100); });
+    (window.dataLayer = window.dataLayer || []).push(o);
+  }
+  function trackLocation(el) {
+    if (el.closest('.nav, .menu')) return 'header';
+    if (el.closest('.footer')) return 'footer';
+    if (el.closest('dialog')) return 'project_popup';
+    var sec = el.closest('section[id], form[id]');
+    if (!sec) return 'page';
+    return sec.id === 'top' ? 'hero' : sec.id;
+  }
+  function trackLabel(el) { return (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60); }
+  function initTracking() {
+    window.dataLayer = window.dataLayer || [];
+    /* Consent defaults, read by the Google tag before it sends anything. The site runs no advertising, so
+       advertising storage is off everywhere. There is no cookie banner, so in the EEA, the UK and Switzerland
+       analytics cookies stay off too and Google receives only cookieless measurements (see the privacy policy). */
+    var gtag = function () { window.dataLayer.push(arguments); };
+    gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'granted' });
+    gtag('consent', 'default', { analytics_storage: 'denied', region: ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IS', 'IE', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'GB', 'CH'] });
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a, button');
+      if (!a || a.hasAttribute('data-no-track')) return;
+      var href = a.getAttribute('href') || '';
+      var m = /[?&]intent=(consultation|project)\b/.exec(href);
+      var intent = a.getAttribute('data-intent') || (m ? m[1] : '');
+      if (intent === 'consultation') track('consultation_click', { cta_location: trackLocation(a), cta_text: trackLabel(a) });
+      else if (intent === 'project') track('project_inquiry_click', { cta_location: trackLocation(a), cta_text: trackLabel(a) });
+      var method = /^mailto:/i.test(href) ? 'email' : /^tel:/i.test(href) ? 'phone' : /linkedin\.com/i.test(href) ? 'linkedin' : /fiverr\.com/i.test(href) ? 'fiverr' : '';
+      if (method) track('contact_click', { contact_method: method, cta_location: trackLocation(a) });
+    }, true);
+    var service = document.body.getAttribute('data-service');
+    if (service) track('service_view', { service_name: service, view_type: 'page' });
+    /* Tag Manager loads once the page itself has finished, so it never competes with the first paint. */
+    if (!GTM_ID) return;
+    var start = function () {
+      if (window.google_tag_manager && window.google_tag_manager[GTM_ID]) return;
+      window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
+      document.head.appendChild(s);
+    };
+    var later = function () { if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 2500 }); else setTimeout(start, 1200); };
+    if (document.readyState === 'complete') later(); else window.addEventListener('load', later, { once: true });
+  }
+  var seenService = {};
+  function trackServiceShowcase(i) {
+    var tab = $$('.svc__tab-name')[i], name = tab ? tab.textContent.trim() : '';
+    if (!name || seenService[name]) return;
+    seenService[name] = true;
+    track('service_view', { service_name: name, view_type: 'home_showcase' });
+  }
+
+  /* ---------- Illustration pictures ----------
+     The product photos inside the drawn interfaces are defined once in a hidden sprite. They are
+     fetched as their section comes near the screen instead of with the first paint. */
+  function initSpriteImages() {
+    var defs = $$('svg.sprite image[data-href]');
+    if (!defs.length) return;
+    var byId = {};
+    defs.forEach(function (im) { byId[im.id] = im; });
+    function load(id) { var im = byId[id]; if (im && im.hasAttribute('data-href')) { im.setAttribute('href', im.getAttribute('data-href')); im.removeAttribute('data-href'); } }
+    var groups = [];
+    $$('use').forEach(function (u) {
+      var id = (u.getAttribute('href') || u.getAttribute('xlink:href') || '').slice(1);
+      if (!byId[id]) return;
+      var host = u.closest('section') || u.closest('svg');
+      var g = groups.filter(function (x) { return x.el === host; })[0];
+      if (!g) { g = { el: host, ids: [] }; groups.push(g); }
+      if (g.ids.indexOf(id) < 0) g.ids.push(id);
+    });
+    if (!('IntersectionObserver' in window)) { defs.forEach(function (im) { load(im.id); }); return; }
+    var io = new IntersectionObserver(function (en) {
+      en.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        groups.forEach(function (g) { if (g.el === e.target) g.ids.forEach(load); });
+      });
+    }, { rootMargin: '700px 0px 700px 0px' });
+    groups.forEach(function (g) { io.observe(g.el); });
   }
 
   /* ---------- Toast ---------- */
@@ -257,7 +354,7 @@
   }
   function svcMode() {
     svc.desktop = svcDesktop.matches;
-    var idx = svc.index;
+    var idx = $('#svc-tabs') || svc.index;
     if (svc.desktop) {
       idx.setAttribute('role', 'tablist');
       idx.setAttribute('aria-label', 'Services');
@@ -294,13 +391,13 @@
     svc.hl = $('#svc-hl');
     svc.index = $('#svc-index');
     svc.tabs.forEach(function (t, i) {
-      t.addEventListener('click', function () { svcSelect(i); });
+      t.addEventListener('click', function () { svcSelect(i); trackServiceShowcase(i); });
       t.addEventListener('pointerenter', function (e) {
         if (!svc.desktop || e.pointerType !== 'mouse') return;
         svc.hovering = true;
         svcHighlight(t);
         clearTimeout(svc.hoverT);
-        svc.hoverT = setTimeout(function () { svcSelect(i); }, 140);
+        svc.hoverT = setTimeout(function () { svcSelect(i); trackServiceShowcase(i); }, 140);
       });
       t.addEventListener('pointerleave', function () { clearTimeout(svc.hoverT); });
       t.addEventListener('keydown', function (e) {
@@ -313,16 +410,17 @@
         if (n === null) return;
         e.preventDefault();
         svcSelect(n, { focus: true });
+        trackServiceShowcase(n);
       });
     });
     svc.index.addEventListener('pointerleave', function () { svc.hovering = false; svcHighlight(svc.tabs[svc.cur]); });
-    svc.dots.forEach(function (d, n) { d.addEventListener('click', function () { svcSelect(n); }); });
+    svc.dots.forEach(function (d, n) { d.addEventListener('click', function () { svcSelect(n); trackServiceShowcase(n); }); });
     if ('IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (entries) {
         if (svc.desktop) return;
         entries.forEach(function (e) {
           e.target.classList.toggle('is-near', e.isIntersecting);
-          if (e.isIntersecting) { var n = svc.panels.indexOf(e.target); svc.cur = n; svcMark(n); }
+          if (e.isIntersecting) { var n = svc.panels.indexOf(e.target); svc.cur = n; svcMark(n); if (svc.stage.scrollLeft > 4) trackServiceShowcase(n); }
         });
       }, { root: svc.stage, threshold: 0.6 });
       svc.panels.forEach(function (p) { io.observe(p); });
@@ -415,8 +513,12 @@
         /* The live preview's screenshot is embedded once; the dialog borrows it. */
         $$('img[data-shot-from]', content).forEach(function (img) {
           var from = $('img[data-shot="' + img.dataset.shotFrom + '"]');
-          if (from) img.src = from.currentSrc || from.src;
+          if (!from) return;
+          /* the dialog shows the screenshot larger than the preview, so it chooses its own size from the same set */
+          if (from.getAttribute('srcset')) { img.sizes = img.getAttribute('data-sizes') || from.sizes; img.srcset = from.getAttribute('srcset'); }
+          img.src = from.getAttribute('src');
         });
+        track('project_view', { project_name: btn.dataset.project, cta_location: trackLocation(btn) });
         var h = $('h2', content); if (h) h.id = 'project-heading';
         opener = btn;
         dialog.showModal();
@@ -435,7 +537,7 @@
     /* A service page links to its project with ?project=<name>: the page scrolls to the work and opens it. */
     var want = window.URLSearchParams ? new URLSearchParams(location.search).get('project') : null;
     var deep = want ? $('[data-project="' + want.replace(/[^a-z0-9-]/gi, '') + '"]') : null;
-    if (deep) window.addEventListener('load', function () { scrollToTarget($('#work')); setTimeout(function () { deep.click(); }, 900); });
+    if (deep) onLoad(function () { scrollToTarget($('#work')); setTimeout(function () { deep.click(); }, 900); });
   }
 
   /* Cursor badge over project previews (mouse only). */
@@ -778,6 +880,12 @@
         if (r.el.getAttribute('aria-invalid') === 'true' || r.el.closest('.field').classList.contains('is-valid')) check(r);
       });
     });
+    var started = false;
+    form.addEventListener('focusin', function () {
+      if (started) return;
+      started = true;
+      track('inquiry_start', { form_intent: current() });
+    });
     form.addEventListener('animationend', function (e) { var f = e.target.closest('.field'); if (f) f.classList.remove('is-shake'); });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -794,8 +902,9 @@
       var body = lines.join('\n') + '\n\n' + $('#f-msg').value.trim();
       var href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
       status.hidden = false;
-      status.innerHTML = t.sent.replace('{e}', CONTACT_EMAIL) + ' If nothing opened, <a href="' + href.replace(/"/g, '&quot;') + '">open the draft again</a>, email <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a> or call <a href="tel:' + CONTACT_TEL + '">' + CONTACT_PHONE + '</a>.';
+      status.innerHTML = t.sent.replace('{e}', CONTACT_EMAIL) + ' If nothing opened, <a href="' + href.replace(/"/g, '&quot;') + '" data-no-track>open the draft again</a>, email <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a> or call <a href="tel:' + CONTACT_TEL + '">' + CONTACT_PHONE + '</a>.';
       form.classList.add('is-sent');
+      track('inquiry_email_handoff', { form_intent: current(), service_interest: $('#f-type') ? $('#f-type').value : '' });
       window.location.href = href;
     });
   }
@@ -847,7 +956,7 @@
         holdNav(900);
         if (lenis) lenis.scrollTo(y, { immediate: true }); else window.scrollTo(0, y);
       };
-      window.addEventListener('load', function () { requestAnimationFrame(align); setTimeout(align, 700); });
+      onLoad(function () { requestAnimationFrame(align); setTimeout(align, 700); });
     }
   }
 
@@ -966,17 +1075,8 @@
         gsap.ticker.lagSmoothing(0);
       }
 
-      /* Hero: the portrait settles in while the name rises behind it, then the offer, the trust
-         card and the achievements follow. */
-      if ($('#hero-inner')) gsap.timeline({ delay: 1.1, defaults: { ease: EXPO } })
-        .fromTo('.hero__model', { opacity: 0, y: 46 }, { opacity: 1, y: 0, duration: 1.7, clearProps: 'transform' }, 0.1)
-        .fromTo('[data-hero="name"]', { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 1.5, clearProps: 'transform' }, 0)
-        .fromTo('[data-hero="hi"]', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 1.1, clearProps: 'transform' }, 0.35)
-        .set('.hero__title', { visibility: 'visible' }, 0.55)
-        .fromTo('.hero__line > span', { yPercent: 112 }, { yPercent: 0, duration: 1.2, stagger: 0.09 }, 0.55)
-        .fromTo('[data-hero="copy"]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 1, stagger: 0.12, clearProps: 'transform' }, 0.7)
-        .fromTo('[data-hero="card"]', { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 1.15, clearProps: 'transform' }, 0.85)
-        .fromTo('[data-hero="marquee"]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.1, clearProps: 'transform' }, 1);
+      /* Hero: the entrance (portrait, name, offer, card, achievements) is pure CSS in section 21 of the
+         stylesheet, timed from the first paint so it never waits for this script to download. */
 
       /* Depth: with a mouse, the name and the portrait shift a few pixels apart. */
       if (finePointer.matches && $('#hero-inner')) {
@@ -991,90 +1091,99 @@
         });
       }
 
-      /* Headings: words rise out of a mask; the orange underline draws after them. */
-      $$('[data-split]').forEach(function (el) {
-        var words = splitWords(el), swash = $('.swash path', el);
-        gsap.set(words, { yPercent: 115 });
-        if (swash) gsap.set(swash, { strokeDashoffset: 1 });
-        ScrollTrigger.create({
-          trigger: el, start: 'top 88%', once: true,
-          onEnter: function () {
-            gsap.to(words, { yPercent: 0, duration: 1.15, ease: EXPO, stagger: 0.045 });
-            if (swash) gsap.to(swash, { strokeDashoffset: 0, duration: 1.1, ease: 'power2.inOut', delay: 0.55 + words.length * 0.03 });
-          }
-        });
-      });
-
-      /* About: the statement inks in with scroll; the second picture settles into place. */
-      var stm = $('[data-scrub]');
-      if (stm) {
-        var txt = stm.textContent.trim().replace(/\s+/g, ' ');
-        /* screen readers get the sentence once; the inking words are decoration */
-        stm.innerHTML = '<span class="sr-only">' + txt + '</span>' + txt.split(' ').map(function (w) { return '<span aria-hidden="true">' + w + '</span>'; }).join(' ');
-        gsap.fromTo($$('span[aria-hidden]', stm), { opacity: 0.14 }, { opacity: 1, ease: 'none', stagger: 0.08, scrollTrigger: { trigger: stm, start: 'top 88%', end: 'bottom 62%', scrub: true } });
-      }
-      var second = $('.about__second');
-      if (second) gsap.fromTo(second, { rotate: 9, scale: 0.84 }, { rotate: 0, scale: 1, duration: 1.7, ease: EXPO, scrollTrigger: once(second, 'top 92%') });
-
-      /* Large photographs drift inside their frames. */
-      $$('.about__main img, .faq__media img, .stack__bg img').forEach(function (img) {
-        gsap.fromTo(img, { yPercent: -6, scale: 1.14 }, { yPercent: 6, scale: 1.14, ease: 'none', scrollTrigger: { trigger: img.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
-      });
-
-      /* Floating layers move at their own pace. */
-      $$('[data-float]').forEach(function (el) {
-        var v = Number(el.dataset.float) || 0;
-        gsap.fromTo(el, { y: -v / 2 }, { y: v / 2, ease: 'none', scrollTrigger: { trigger: el.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
-      });
-      /* Concept work phones drift at the reference pace. */
-      $$('[data-rf-float]').forEach(function (el) {
-        var v = Number(el.dataset.rfFloat) || 0;
-        gsap.fromTo(el, { y: -v / 2 }, { y: v / 2, ease: 'none', scrollTrigger: { trigger: el.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
-      });
-
-      /* Why: the four cards rise into place together, one beat apart; captions follow. */
-      $$('.benefit').forEach(function (p, k) {
-        gsap.timeline({ scrollTrigger: once(p, 'top 88%') })
-          .fromTo(p, { y: 56, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: EXPO, delay: (k % 2) * 0.1, clearProps: 'transform,opacity' }, 0)
-          .fromTo($$('.tags li', p), { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.45);
-      });
-
-      /* Technology tiles assemble into the table. */
-      if ($('.el')) gsap.fromTo('.el', { opacity: 0, y: 34, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 1, ease: EXPO, stagger: { each: 0.045, grid: 'auto', from: 'start' }, clearProps: 'transform,opacity', scrollTrigger: once('#elements', 'top 86%') });
-
-      /* FAQ: questions slide in from the left, one after another (never past the right edge on phones). */
-      if ($('.faq__list')) gsap.fromTo('.faq__item', { x: -48, opacity: 0 }, { x: 0, opacity: 1, duration: 1.1, ease: EXPO, stagger: 0.07, clearProps: 'transform,opacity', scrollTrigger: once('.faq__list', 'top 84%') });
-
-      /* Contact: the form panel opens upward, then its fields arrive in order. */
-      var form = $('#brief');
-      if (form) {
-        gsap.timeline({ scrollTrigger: once(form, 'top 84%') })
-          .fromTo(form, { clipPath: 'inset(100% 0% 0% 0% round 24px)' }, { clipPath: 'inset(0% 0% 0% 0% round 24px)', duration: 1.3, ease: INOUT, clearProps: 'clipPath' }, 0)
-          .fromTo($$('.intent, .field, .form__note', form).concat($$('button[type="submit"]', form)), { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.4);
-        gsap.fromTo('.contact__details > div', { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: EXPO, stagger: 0.09, clearProps: 'transform,opacity', scrollTrigger: once('.contact__details', 'top 90%') });
-      }
-
-      /* Footer: columns rise in sequence. */
-      gsap.fromTo('.footer__brand, .footer__cols > *', { y: 44, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity', scrollTrigger: once('.footer', 'top 90%') });
-
-      /* Magnetic pull on primary calls to action. */
-      if (finePointer.matches) {
-        $$('[data-magnetic]').forEach(function (b) {
-          var xTo = gsap.quickTo(b, 'x', { duration: 0.6, ease: 'power3.out' });
-          var yTo = gsap.quickTo(b, 'y', { duration: 0.6, ease: 'power3.out' });
-          var ico = $('.btn__icon', b), ix = ico ? gsap.quickTo(ico, 'x', { duration: 0.6, ease: 'power3.out' }) : null;
-          b.addEventListener('pointermove', function (e) {
-            var r = b.getBoundingClientRect(), dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
-            xTo(dx * 0.22); yTo(dy * 0.32); if (ix) ix(dx * 0.06);
-          });
-          b.addEventListener('pointerleave', function () { xTo(0); yTo(0); if (ix) ix(0); });
-        });
-      }
-
       return function () { if (lenis) { lenis.destroy(); lenis = null; } };
     });
+    /* The rest of the motion layer is set up in two later slices of the start-up (see boot). */
+    deferStep('motion: headings and pictures', function () {
+      mm.add('(prefers-reduced-motion: no-preference)', function () {
+        /* Headings: words rise out of a mask; the orange underline draws after them. */
+        $$('[data-split]').forEach(function (el) {
+          var words = splitWords(el), swash = $('.swash path', el);
+          gsap.set(words, { yPercent: 115 });
+          if (swash) gsap.set(swash, { strokeDashoffset: 1 });
+          ScrollTrigger.create({
+            trigger: el, start: 'top 88%', once: true,
+            onEnter: function () {
+              gsap.to(words, { yPercent: 0, duration: 1.15, ease: EXPO, stagger: 0.045 });
+              if (swash) gsap.to(swash, { strokeDashoffset: 0, duration: 1.1, ease: 'power2.inOut', delay: 0.55 + words.length * 0.03 });
+            }
+          });
+        });
 
-    window.addEventListener('load', function () { ScrollTrigger.sort(); ScrollTrigger.refresh(); });
+        /* About: the statement inks in with scroll; the second picture settles into place. */
+        var stm = $('[data-scrub]');
+        if (stm) {
+          var txt = stm.textContent.trim().replace(/\s+/g, ' ');
+          /* screen readers get the sentence once; the inking words are decoration */
+          stm.innerHTML = '<span class="sr-only">' + txt + '</span>' + txt.split(' ').map(function (w) { return '<span aria-hidden="true">' + w + '</span>'; }).join(' ');
+          gsap.fromTo($$('span[aria-hidden]', stm), { opacity: 0.14 }, { opacity: 1, ease: 'none', stagger: 0.08, scrollTrigger: { trigger: stm, start: 'top 88%', end: 'bottom 62%', scrub: true } });
+        }
+        var second = $('.about__second');
+        if (second) gsap.fromTo(second, { rotate: 9, scale: 0.84 }, { rotate: 0, scale: 1, duration: 1.7, ease: EXPO, scrollTrigger: once(second, 'top 92%') });
+
+        /* Large photographs drift inside their frames. */
+        $$('.about__main img, .faq__media img, .stack__bg img').forEach(function (img) {
+          gsap.fromTo(img, { yPercent: -6, scale: 1.14 }, { yPercent: 6, scale: 1.14, ease: 'none', scrollTrigger: { trigger: img.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
+        });
+
+        /* Floating layers move at their own pace. */
+        $$('[data-float]').forEach(function (el) {
+          var v = Number(el.dataset.float) || 0;
+          gsap.fromTo(el, { y: -v / 2 }, { y: v / 2, ease: 'none', scrollTrigger: { trigger: el.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
+        });
+        /* Concept work phones drift at the reference pace. */
+        $$('[data-rf-float]').forEach(function (el) {
+          var v = Number(el.dataset.rfFloat) || 0;
+          gsap.fromTo(el, { y: -v / 2 }, { y: v / 2, ease: 'none', scrollTrigger: { trigger: el.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } });
+        });
+
+      });
+    });
+    deferStep('motion: cards, form and footer', function () {
+      mm.add('(prefers-reduced-motion: no-preference)', function () {
+        /* Why: the four cards rise into place together, one beat apart; captions follow. */
+        $$('.benefit').forEach(function (p, k) {
+          gsap.timeline({ scrollTrigger: once(p, 'top 88%') })
+            .fromTo(p, { y: 56, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: EXPO, delay: (k % 2) * 0.1, clearProps: 'transform,opacity' }, 0)
+            .fromTo($$('.tags li', p), { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.45);
+        });
+
+        /* Technology tiles assemble into the table. */
+        if ($('.el')) gsap.fromTo('.el', { opacity: 0, y: 34, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 1, ease: EXPO, stagger: { each: 0.045, grid: 'auto', from: 'start' }, clearProps: 'transform,opacity', scrollTrigger: once('#elements', 'top 86%') });
+
+        /* FAQ: questions slide in from the left, one after another (never past the right edge on phones). */
+        if ($('.faq__list')) gsap.fromTo('.faq__item', { x: -48, opacity: 0 }, { x: 0, opacity: 1, duration: 1.1, ease: EXPO, stagger: 0.07, clearProps: 'transform,opacity', scrollTrigger: once('.faq__list', 'top 84%') });
+
+        /* Contact: the form panel opens upward, then its fields arrive in order. */
+        var form = $('#brief');
+        if (form) {
+          gsap.timeline({ scrollTrigger: once(form, 'top 84%') })
+            .fromTo(form, { clipPath: 'inset(100% 0% 0% 0% round 24px)' }, { clipPath: 'inset(0% 0% 0% 0% round 24px)', duration: 1.3, ease: INOUT, clearProps: 'clipPath' }, 0)
+            .fromTo($$('.intent, .field, .form__note', form).concat($$('button[type="submit"]', form)), { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.4);
+          gsap.fromTo('.contact__details > div', { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: EXPO, stagger: 0.09, clearProps: 'transform,opacity', scrollTrigger: once('.contact__details', 'top 90%') });
+        }
+
+        /* Footer: columns rise in sequence. */
+        gsap.fromTo('.footer__brand, .footer__cols > *', { y: 44, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity', scrollTrigger: once('.footer', 'top 90%') });
+
+        /* Magnetic pull on primary calls to action. */
+        if (finePointer.matches) {
+          $$('[data-magnetic]').forEach(function (b) {
+            var xTo = gsap.quickTo(b, 'x', { duration: 0.6, ease: 'power3.out' });
+            var yTo = gsap.quickTo(b, 'y', { duration: 0.6, ease: 'power3.out' });
+            var ico = $('.btn__icon', b), ix = ico ? gsap.quickTo(ico, 'x', { duration: 0.6, ease: 'power3.out' }) : null;
+            b.addEventListener('pointermove', function (e) {
+              var r = b.getBoundingClientRect(), dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
+              xTo(dx * 0.22); yTo(dy * 0.32); if (ix) ix(dx * 0.06);
+            });
+            b.addEventListener('pointerleave', function () { xTo(0); yTo(0); if (ix) ix(0); });
+          });
+        }
+
+      });
+    });
+
+    onLoad(function () { ScrollTrigger.sort(); ScrollTrigger.refresh(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
 
     /* Content that grows or shrinks after load (FAQ answers, the sent form)
@@ -1090,32 +1199,31 @@
   }
 
   /* ---------- Boot ---------- */
+  var bootSteps = [], bootAt = 0, bootAdded = 0;
+  /* queues a step to run right after the one that is running now (and after any queued before it) */
+  function deferStep(name, fn) { bootSteps.splice(bootAt + 1 + bootAdded++, 0, [name, fn]); }
   function boot() {
-    safe('reveals', initReveals);
-    safe('menu', initMenu);
-    safe('nav', initNav);
-    safe('nav-scroll', initNavScroll);
-    safe('buttons', initButtons);
+    var steps = [['tracking', initTracking], ['illustration pictures', initSpriteImages], ['reveals', initReveals],
+      ['menu', initMenu], ['nav', initNav], ['nav-scroll', initNavScroll], ['buttons', initButtons]];
     /* The home page carries the interactive sections; the service and policy pages share the rest. */
-    if ($('#svc')) {
-      safe('hero', initHero);
-      safe('services', initServices);
-      safe('service visuals', initSvcViz);
-      safe('reference reveals', initRfReveals);
-      safe('projects', initRfProjects);
-      safe('cursor', initRfCursorBadge);
-      safe('live preview', initRfShots);
-      safe('stage visuals', initRfViz);
-      safe('why', initWhy);
-      safe('stack', initStack);
-      safe('form', initForm);
-    }
-    if ($('#faq')) safe('faq', initFaq);
-    safe('placeholders', initPlaceholders);
-    safe('spotlight', initSpotlight);
-    safe('motion', initMotion);
-    safe('anchors', initAnchors);
-    safe('year', function () { $('#year').textContent = String(new Date().getFullYear()); });
+    if ($('#svc')) steps = steps.concat([['hero', initHero], ['services', initServices], ['service visuals', initSvcViz],
+      ['reference reveals', initRfReveals], ['projects', initRfProjects], ['cursor', initRfCursorBadge], ['live preview', initRfShots],
+      ['stage visuals', initRfViz], ['why', initWhy], ['stack', initStack], ['form', initForm]]);
+    if ($('#faq')) steps.push(['faq', initFaq]);
+    steps = steps.concat([['placeholders', initPlaceholders], ['spotlight', initSpotlight], ['motion', initMotion], ['anchors', initAnchors],
+      ['year', function () { $('#year').textContent = String(new Date().getFullYear()); }]]);
+    /* Set-up runs in short slices, in this order, so the page keeps answering taps and clicks while it starts. */
+    bootSteps = steps;
+    var i = 0;
+    (function run() {
+      var t = performance.now();
+      while (i < bootSteps.length) {
+        bootAt = i; bootAdded = 0;
+        safe(bootSteps[i][0], bootSteps[i][1]);
+        i++;
+        if (i < bootSteps.length && performance.now() - t > 30) { setTimeout(run, 0); return; }
+      }
+    })();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
