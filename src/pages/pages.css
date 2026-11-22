@@ -127,6 +127,8 @@
 .page-cta h2{max-width:17ch}
 .page-cta .lead{margin-top:1.25rem}
 .page-cta__side{display:grid;gap:1.25rem;align-content:end}
+.page-cta__alt{display:inline-flex;align-items:center;justify-self:center;gap:.5rem;min-height:44px;font-size:.9375rem;font-weight:600;color:var(--white);text-decoration:underline 1px;text-decoration-color:rgba(255,255,255,.35);text-underline-offset:4px;transition:color .2s ease,text-decoration-color .2s ease}
+.page-cta__alt svg{width:1rem;height:1rem;stroke-width:2}
 .page-cta__contact>div{display:grid;grid-template-columns:5.5rem minmax(0,1fr);gap:1rem;padding-block:.875rem;border-top:1px solid var(--line-on-dark);font-size:var(--fs-small)}
 .page-cta__contact>div:last-child{border-bottom:1px solid var(--line-on-dark)}
 .page-cta__contact dt{color:var(--text-muted-on-dark)}
@@ -166,22 +168,23 @@
 
 @media (hover:hover) and (pointer:fine){
   .crumbs a:hover{color:var(--white);text-decoration-color:var(--orange)}
-  .proof a:hover,.page-cta__contact a:hover{color:var(--orange);text-decoration-color:currentColor}
+  .proof a:hover,.page-cta__contact a:hover,.page-cta__alt:hover{color:var(--orange);text-decoration-color:currentColor}
   .toc a:hover{color:var(--charcoal)}
   .lost a:hover{background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
 }
 
-/* Project popups: the review area. Until a client has approved a review for publication, the slot
-   says plainly that there is none; a published review uses the same frame with a quote and a name. */
+/* Project popups: the client review, in the client's own words, credited to the business. */
 .rf-review{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1rem 1.125rem;align-items:start;margin:0;padding:clamp(1.25rem,3vw,1.75rem);border-radius:var(--r-panel);background:var(--white);box-shadow:inset 0 0 0 1px var(--line)}
 .rf-review__avatar{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;object-fit:cover;color:var(--orange-ink);background:var(--offwhite);box-shadow:inset 0 0 0 1px var(--line)}
 .rf-review__avatar svg{width:22px;height:22px;stroke-width:1.8}
 .rf-review__body{display:grid;gap:.5rem;min-width:0;align-self:center}
 .rf-review h3{font-family:var(--display);font-size:clamp(1.25rem,.6vw + 1.05rem,1.5rem);font-weight:500;line-height:1.1}
 .rf-review__text{max-width:58ch;color:var(--text-muted);font-size:.9375rem;line-height:1.6}
-.rf-review__quote{margin:0;font-family:var(--display);font-size:clamp(1.25rem,.8vw + 1rem,1.625rem);line-height:1.35}
-.rf-review__who{font-size:var(--fs-small);color:var(--text-muted)}
-.rf-review__who b{color:var(--charcoal);font-weight:700}
+.rf-review__quote{margin:0}
+.rf-review__quote p{max-width:60ch;font-size:1rem;line-height:1.65;color:var(--charcoal);text-wrap:pretty}
+.rf-review__who{margin-top:.25rem;font-size:var(--fs-small);color:var(--text-muted)}
+.rf-review__who b{display:block;color:var(--charcoal);font-weight:700}
+.rf-review__who span{display:block}
 @media (max-width:559px){
   .rf-review{grid-template-columns:auto minmax(0,1fr);align-items:center}
   .rf-review__body{display:contents}
