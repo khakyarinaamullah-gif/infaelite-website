@@ -364,8 +364,10 @@ def build_site(dist):
     shutil.copy(root / 'static/infa-elite-logo.png', dist / 'infa-elite-logo.png')
 
     def assemble(meta_html, body_html, r, label, extra_css=False):
-        head = (f'<link rel="preload" href="{r}assets/fonts/roboto-flex-compressed.woff2" as="font" type="font/woff2" crossorigin>\n'
-                f'<link rel="stylesheet" href="{r}assets/site.css">\n')
+        head = f'<link rel="preload" href="{r}assets/fonts/roboto-flex-compressed.woff2" as="font" type="font/woff2" crossorigin>\n'
+        if label == 'home':   # the loader's logo mark is the first thing painted; the browser would only find it in the CSS
+            head += f'<link rel="preload" href="{r}assets/brand/infa-elite-mark.webp" as="image" type="image/webp" fetchpriority="high">\n'
+        head += f'<link rel="stylesheet" href="{r}assets/site.css">\n'
         if extra_css: head += f'<link rel="stylesheet" href="{r}assets/pages.css">\n'
         body_html = re.sub(r'\{\{srcset(-avif)?:([\w.-]+)\}\}', srcset(r), body_html)
         body_html = re.sub(r'\{\{asset:([\w.-]+)\}\}', local(r), body_html).replace('{{logo}}', f'{r}assets/brand/infa-elite-logo.webp')
