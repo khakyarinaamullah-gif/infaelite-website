@@ -145,6 +145,8 @@ def shell(r, current=None):
     head = BODY[BODY.index('<!-- SHELL:HEADER:START -->'):BODY.index('<!-- SHELL:HEADER:END -->')]
     foot = BODY[BODY.index('<!-- SHELL:FOOTER:START -->'):BODY.index('<!-- SHELL:FOOTER:END -->')]
     def relink(s):
+        # links that choose the form's intent carry it to the home page in the address
+        s = re.sub(r'href="#contact" data-intent="(\w+)"', r'href="{{root}}?intent=\1#contact" data-intent="\1"', s)
         s = s.replace('href="#top"', 'href="{{root}}"')
         s = re.sub(r'href="#([\w-]+)"', r'href="{{root}}#\1"', s)
         s = s.replace('aria-label="INFA ELITE, back to top"', 'aria-label="INFA ELITE home"')

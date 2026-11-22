@@ -65,6 +65,7 @@ The canonical URLs, sitemap and structured data already use `https://infaelite.c
 
 ## Content notes
 
-- The contact form has no server behind it. It opens the visitor's email app with a pre-filled brief addressed to the email in `BIZ`, and says so on the page. Connecting a form service is a separate decision.
-- Project popups have a review slot. It states that no client review is published until a client has written one and approved it; the markup comment in each popup explains how to add a real one.
+- The contact form serves two intents, a free consultation and a project brief. Links choose one with `data-intent` on the home page, or `?intent=consultation|project&service=...#contact` from other pages; `?project=<name>#work` opens a project popup.
+- The form has no server behind it. It opens the visitor's email app with a pre-filled message addressed to the email in `BIZ`, and says so on the page; no consultation is booked until you confirm one by reply. Connecting a form service or a booking calendar is a separate decision.
+- Each project popup ends with the client's review, quoted word for word as supplied, above the project call to action.
 - The privacy policy describes the site as built (no cookies, no analytics, third-party fonts, scripts and photos). Update it if analytics, a form service or other tracking is added.
