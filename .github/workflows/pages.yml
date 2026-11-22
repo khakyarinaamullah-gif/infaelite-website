@@ -35,7 +35,14 @@ jobs:
           python -m pip install -r requirements.txt
           npm ci --no-audit --no-fund
 
+      # Reads the address GitHub Pages serves this site at: the custom domain once one is set,
+      # the github.io project address until then. The build writes it into canonical URLs and the sitemap.
+      - id: pages
+        uses: actions/configure-pages@v6
+
       - name: Build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: python build.py dist
 
       - name: Check the build
@@ -46,9 +53,9 @@ jobs:
           test -f dist/wordpress-development/index.html
           test -f dist/privacy-policy/index.html
           test -f dist/404.html
+          test -f dist/assets/vendor.js
+          test -f dist/sitemap.xml
           ! grep -rl '{{' dist --include=*.html --include=*.css --include=*.js
-
-      - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5
         with:
