@@ -11,14 +11,15 @@ The site is static HTML, CSS and JavaScript. `build.py` assembles it from `src/`
 | `src/00-meta.html` | Home page `<head>`: title, description, Open Graph, structured data |
 | `src/01-head.html` | The stylesheet (published as `assets/site.css`) |
 | `src/02-body.html` | Home page markup, including the shared header, menu and footer |
-| `src/03-script.html` | Animation libraries (jsDelivr) and the site script (published as `assets/site.js`) |
+| `src/03-script.html` | The site script (published, minified, as `assets/site.js`). GSAP, ScrollTrigger and Lenis come from `node_modules` and are published as `assets/vendor.js` |
 | `src/pages/*.html` | Other pages. The comment at the top of each file sets its address, title, description and breadcrumb |
-| `src/pages/pages.css` | Styles for the service, policy and 404 pages and the project review slot |
-| `assets/` | Images and the display font |
+| `src/pages/pages.css` | Styles for the service, policy and 404 pages (published as `assets/pages.css`, loaded only on those pages) |
+| `assets/` | Images and the display font. `NAME-<width>.webp` / `.avif` files are smaller copies for `srcset` |
+| `tools/responsive-images.mjs` | Makes those copies: `npm i --no-save sharp && node tools/responsive-images.mjs` after replacing an original |
 | `brand/` | Official INFA ELITE logo and logo mark, used unmodified |
 | `static/` | `og-image.jpg` and the logo file referenced by structured data |
 | `viz/` | Generators for the animated illustrations (they rewrite marked blocks in `src/`) |
-| `build.py` | The build. Business details (email, phone, registration, Fiverr figures) live in `BIZ` at the top |
+| `build.py` | The build. Business details (email, phone, registration, Fiverr figures) live in `BIZ` at the top; the Tag Manager container, Search Console tag and content date sit just above |
 
 ## Build locally
 
@@ -30,6 +31,8 @@ python3 -m http.server 8000 --directory dist
 ```
 
 Open http://localhost:8000. `python3 build.py out/index.html` builds a single self-contained home page for quick previews.
+
+The production build serves everything from the site itself: the Manrope and Roboto Flex font files, GSAP, ScrollTrigger and Lenis, minified CSS and JS (esbuild) and minified HTML. Absolute URLs (canonical, Open Graph, structured data, sitemap) use `SITE_URL` when it is set and `https://infaelite.com/` otherwise; the deploy workflow sets it to the address GitHub Pages serves.
 
 ## Deploy with GitHub Pages
 
@@ -61,11 +64,27 @@ Add the domain in GitHub first, then at the DNS provider. GitHub recommends veri
 3. Wait for the DNS check in **Settings > Pages** to pass (DNS changes can take up to 24 hours), then tick **Enforce HTTPS** once GitHub has issued the certificate.
 4. Check: `dig infaelite.com +noall +answer` lists the four A records, and `https://infaelite.com` and `https://www.infaelite.com` both load the site over HTTPS.
 
-The canonical URLs, sitemap and structured data already use `https://infaelite.com/` (`SITE` in `build.py`).
+5. Run the **Deploy site to GitHub Pages** workflow once more (Actions tab, *Run workflow*). The build reads the Pages address, so canonical URLs, the sitemap and structured data switch to `https://infaelite.com/`.
 
 ## Content notes
 
 - The contact form serves two intents, a free consultation and a project brief. Links choose one with `data-intent` on the home page, or `?intent=consultation|project&service=...#contact` from other pages; `?project=<name>#work` opens a project popup.
 - The form has no server behind it. It opens the visitor's email app with a pre-filled message addressed to the email in `BIZ`, and says so on the page; no consultation is booked until you confirm one by reply. Connecting a form service or a booking calendar is a separate decision.
 - Each project popup ends with the client's review, quoted word for word as supplied, above the project call to action.
-- The privacy policy describes the site as built (no cookies, no analytics, third-party fonts, scripts and photos). Update it if analytics, a form service or other tracking is added.
+- The privacy policy describes the site as built: Google Analytics through Google Tag Manager, fonts and scripts served from the site, two Unsplash photos. Update it if a form service or other tracking is added.
+
+## Analytics
+
+`site.js` loads Google Tag Manager (`GTM_ID` in `build.py`) after the page has finished loading. The container sends page views and the events below to GA4 (measurement ID `G-1XS0JDWF5M`). Consent defaults: advertising storage is off everywhere; analytics cookies are off in the EEA, the UK and Switzerland, where Google receives cookieless measurements only.
+
+| Event | When | Parameters |
+| --- | --- | --- |
+| `consultation_click` | Any free consultation link or button | `cta_location`, `cta_text` |
+| `project_inquiry_click` | Any project brief link or button | `cta_location`, `cta_text` |
+| `inquiry_start` | First click or tab into the contact form | `form_intent` |
+| `inquiry_email_handoff` | The form was valid and the visitor's email app was opened (not a confirmed send) | `form_intent`, `service_interest` |
+| `contact_click` | Email, phone, LinkedIn or Fiverr links | `contact_method`, `cta_location` |
+| `service_view` | A service page is opened, or a service is picked in the home showcase | `service_name`, `view_type` |
+| `project_view` | A project popup opens | `project_name`, `cta_location` |
+
+No names, email addresses, budgets or messages are sent.

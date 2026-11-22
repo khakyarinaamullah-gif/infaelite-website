@@ -1,9 +1,13 @@
 {
   "name": "infaelite-website",
   "private": true,
-  "description": "Build dependency for the INFA ELITE website: the Lucide icon set the build script inlines.",
+  "description": "Build dependencies for the INFA ELITE website: Lucide icons inlined by the build, the Manrope font files, GSAP, ScrollTrigger and Lenis served from the site, and esbuild for minifying.",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@fontsource-variable/manrope": "5.3.0",
+    "esbuild": "0.28.2",
+    "gsap": "3.12.5",
+    "lenis": "1.1.14",
     "lucide-static": "1.76.0"
   }
 }
