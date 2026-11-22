@@ -432,6 +432,10 @@
       if (lenis) lenis.start();
       if (opener && document.activeElement === document.body) opener.focus({ preventScroll: true });
     });
+    /* A service page links to its project with ?project=<name>: the page scrolls to the work and opens it. */
+    var want = window.URLSearchParams ? new URLSearchParams(location.search).get('project') : null;
+    var deep = want ? $('[data-project="' + want.replace(/[^a-z0-9-]/gi, '') + '"]') : null;
+    if (deep) window.addEventListener('load', function () { scrollToTarget($('#work')); setTimeout(function () { deep.click(); }, 900); });
   }
 
   /* Cursor badge over project previews (mouse only). */
@@ -715,15 +719,47 @@
   }
 
   /* ---------- Brief form: validates, then opens a pre-filled email ---------- */
+  /* The contact form serves two intents: a free consultation (the low-commitment first step) and a
+     full project brief. Links choose one with data-intent (or ?intent= from another page). */
+  var setIntent = function () {};
+  var INTENTS = {
+    consultation: {
+      hint: 'A free, no-obligation conversation about your goals. We reply within one business day to agree a time, and nothing is booked until we confirm it.',
+      label: 'What would you like to talk about?', placeholder: 'Your goals, your questions and any timing we should know about.',
+      submit: 'Request a Free Consultation', subject: 'Free consultation request', kind: 'Free consultation',
+      sent: 'Your email app should open with this consultation request addressed to {e}. <strong>It has not been sent yet</strong>: press send there. Once it reaches us we reply within one business day to agree a time; no call is booked until we confirm one.'
+    },
+    project: {
+      hint: 'Share what you need, and we reply within one business day with questions, next steps and a rough plan.',
+      label: 'Project requirements', placeholder: 'What are you building, which pages or features does it need, and when would you like to launch?',
+      submit: 'Start Your Project', subject: 'Project brief', kind: 'Project inquiry',
+      sent: 'Your email app should open with this project brief addressed to {e}. <strong>It has not been sent yet</strong>: press send there. Once it reaches us we reply within one business day with questions and next steps.'
+    }
+  };
   function initForm() {
     var form = $('#brief'), status = $('#brief-status');
-    /* A service page can link here with ?service=..., which picks that service in the form. */
-    var want = window.URLSearchParams ? new URLSearchParams(location.search).get('service') : null;
-    if (want) $$('#f-type option').forEach(function (o) { if (o.textContent === want) $('#f-type').value = o.value; });
+    var radios = $$('input[name="intent"]', form), hint = $('#intent-hint'), msgLabel = $('label[for="f-msg"]'), msg = $('#f-msg'), submitLabel = $('.js-submit-label', form);
+    function current() { var r = $('input[name="intent"]:checked', form); return r ? r.value : 'consultation'; }
+    function apply() {
+      var t = INTENTS[current()];
+      hint.textContent = t.hint; msgLabel.textContent = t.label; msg.placeholder = t.placeholder; submitLabel.textContent = t.submit;
+      status.hidden = true;
+    }
+    setIntent = function (name) {
+      if (!INTENTS[name]) return;
+      radios.forEach(function (r) { r.checked = r.value === name; });
+      apply();
+    };
+    radios.forEach(function (r) { r.addEventListener('change', apply); });
+    function pickService(name) { $$('#f-type option').forEach(function (o) { if (o.textContent === name) $('#f-type').value = o.value; }); }
+    /* A service page can link here with ?intent=...&service=..., which sets up the form to match. */
+    var params = window.URLSearchParams ? new URLSearchParams(location.search) : null;
+    if (params && params.get('service')) pickService(params.get('service'));
+    setIntent(params && INTENTS[params.get('intent')] ? params.get('intent') : current());
     var rules = [
       { el: $('#f-name'), err: $('#e-name'), test: function (v) { return v.trim().length > 1; }, msg: 'Enter your name so we know who to reply to.' },
       { el: $('#f-email'), err: $('#e-email'), test: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }, msg: 'Enter an email address in the format name@company.com.' },
-      { el: $('#f-msg'), err: $('#e-msg'), test: function (v) { return v.trim().length >= 10; }, msg: 'Add a sentence or two about the project.' }
+      { el: $('#f-msg'), err: $('#e-msg'), test: function (v) { return v.trim().length >= 10; }, msg: 'Add a sentence or two so we can prepare.' }
     ];
     function check(r) {
       var ok = r.test(r.el.value);
@@ -748,16 +784,22 @@
       var firstBad = null;
       rules.forEach(function (r) { if (!check(r)) { shake(r.el); if (!firstBad) firstBad = r.el; } });
       if (firstBad) { status.hidden = true; firstBad.focus(); return; }
-      var name = $('#f-name').value.trim(), type = $('#f-type').value;
-      var subject = 'Project brief: ' + type + ' (' + name + ')';
-      var body = 'Name: ' + name + '\nEmail: ' + $('#f-email').value.trim() + '\nService: ' + type + '\n\n' + $('#f-msg').value.trim();
+      var t = INTENTS[current()];
+      var name = $('#f-name').value.trim(), type = $('#f-type').value, brand = $('#f-brand').value.trim(), budget = $('#f-budget').value;
+      var subject = t.subject + ': ' + type + ' (' + (brand || name) + ')';
+      var lines = ['Request: ' + t.kind, 'Name: ' + name, 'Email: ' + $('#f-email').value.trim()];
+      if (brand) lines.push('Business or brand: ' + brand);
+      lines.push('Service: ' + type);
+      if (budget) lines.push('Approximate budget: ' + budget);
+      var body = lines.join('\n') + '\n\n' + $('#f-msg').value.trim();
       var href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
       status.hidden = false;
-      status.innerHTML = 'Your email app should open with this brief addressed to ' + CONTACT_EMAIL + '. <strong>It has not been sent yet</strong>: press send there to deliver it. If nothing opened, <a href="' + href.replace(/"/g, '&quot;') + '">open the draft again</a>, email ' + '<a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a> or call <a href="tel:' + CONTACT_TEL + '">' + CONTACT_PHONE + '</a>.';
+      status.innerHTML = t.sent.replace('{e}', CONTACT_EMAIL) + ' If nothing opened, <a href="' + href.replace(/"/g, '&quot;') + '">open the draft again</a>, email <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a> or call <a href="tel:' + CONTACT_TEL + '">' + CONTACT_PHONE + '</a>.';
       form.classList.add('is-sent');
       window.location.href = href;
     });
   }
+
 
   /* ---------- Pointer spotlight on glass panels ---------- */
   function initSpotlight() {
@@ -786,17 +828,26 @@
         var sel = $('#f-type');
         $$('option', sel).forEach(function (o) { if (o.textContent === a.dataset.service) sel.value = o.value; });
       }
+      if (a.dataset.intent) setIntent(a.dataset.intent);
       var dest = target, si = svc.panels.indexOf(target);
       if (si > -1) { svcSelect(si, { instant: !svc.desktop }); dest = $('#services'); }
       history.pushState(null, '', '#' + id);
       requestAnimationFrame(function () { scrollToTarget(dest); });
     });
-    /* Deep link straight to a service, e.g. /#wordpress */
+    /* Arriving with an address like /#contact or /#wordpress (often from another page): the browser
+       jumps before the sections above have taken their final shape, so the target is aligned again,
+       without animation, once the page has loaded and once more after late layout (fonts, pins). */
     var initial = location.hash.slice(1), el = initial ? document.getElementById(initial) : null;
     var si = el ? svc.panels.indexOf(el) : -1;
-    if (si > -1) {
-      svcSelect(si, { instant: true, force: true });
-      window.addEventListener('load', function () { scrollToTarget($('#services')); });
+    if (si > -1) { svcSelect(si, { instant: true, force: true }); el = $('#services'); }
+    if (el && el.id !== 'top') {
+      var align = function () {
+        var y = el.getBoundingClientRect().top + window.pageYOffset - navOffset(el);
+        if (Math.abs(el.getBoundingClientRect().top - navOffset(el)) < 3) return;
+        holdNav(900);
+        if (lenis) lenis.scrollTo(y, { immediate: true }); else window.scrollTo(0, y);
+      };
+      window.addEventListener('load', function () { requestAnimationFrame(align); setTimeout(align, 700); });
     }
   }
 
@@ -999,7 +1050,7 @@
       if (form) {
         gsap.timeline({ scrollTrigger: once(form, 'top 84%') })
           .fromTo(form, { clipPath: 'inset(100% 0% 0% 0% round 24px)' }, { clipPath: 'inset(0% 0% 0% 0% round 24px)', duration: 1.3, ease: INOUT, clearProps: 'clipPath' }, 0)
-          .fromTo($$('.field, .form__note', form).concat($$('button[type="submit"]', form)), { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.4);
+          .fromTo($$('.intent, .field, .form__note', form).concat($$('button[type="submit"]', form)), { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity' }, 0.4);
         gsap.fromTo('.contact__details > div', { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: EXPO, stagger: 0.09, clearProps: 'transform,opacity', scrollTrigger: once('.contact__details', 'top 90%') });
       }
 

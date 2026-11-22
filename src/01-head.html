@@ -1786,6 +1786,20 @@ p{text-wrap:pretty}
 .field__err{font-size:var(--fs-small);color:var(--orange-soft)}
 .field__err:empty{display:none}
 .form__note{font-size:var(--fs-small);color:var(--text-muted-on-dark)}
+/* What the visitor wants to do: a free consultation or a full project brief. One form serves both. */
+.intent{display:grid;gap:.75rem;min-width:0;margin:0;padding:0;border:0}
+.intent legend{float:left;width:100%;margin-bottom:.75rem;padding:0;font-size:var(--fs-small);font-weight:700}
+.intent__opts{clear:both;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.25rem;padding:.25rem;border-radius:999px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.intent__opt{position:relative;display:flex;min-width:0}
+.intent__opt input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.intent__opt span{flex:1;display:grid;place-items:center;min-height:44px;padding:.5rem .75rem;border-radius:999px;font-size:.875rem;font-weight:700;line-height:1.2;text-align:center;color:var(--text-muted-on-dark);transition:background-color .25s ease,color .25s ease}
+.intent__opt input:checked+span{background:var(--white);color:var(--charcoal)}
+.intent__opt input:focus-visible+span{outline:2px solid var(--orange);outline-offset:2px}
+.intent__hint{font-size:var(--fs-small);color:var(--text-muted-on-dark)}
+.field__opt{font-weight:500;color:var(--text-muted-on-dark)}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.5;cursor:not-allowed;pointer-events:none}
+.rf-process__cta{color:var(--white);font-weight:600;text-decoration:underline 1px;text-decoration-color:var(--orange);text-underline-offset:4px;transition:color .2s ease}
+@media (hover:hover) and (pointer:fine){.intent__opt input:not(:checked):hover+span{color:var(--white)}.rf-process__cta:hover{color:var(--orange)}}
 .form__status{font-size:var(--fs-small);padding:.875rem 1rem;border-radius:var(--r-input);background:rgba(231,81,57,.16);box-shadow:inset 0 0 0 1px rgba(231,81,57,.55)}
 .form__status a{text-decoration:underline;text-underline-offset:3px}
 @media (min-width:640px){.form__row{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -56,17 +56,17 @@
         <h1 class="hero__title" id="hero-title"><span class="hero__line"><span>Websites That Turn</span></span> <span class="hero__line"><span>Visitors Into Clients</span></span></h1>
         <p class="hero__desc" data-hero="copy">Shopify, WordPress and custom development.</p>
         <div class="hero__actions" data-hero="copy">
-          <a class="btn btn--ref" href="#contact" data-magnetic>Let's Build <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
+          <a class="btn btn--ref" href="#contact" data-intent="project" data-magnetic>Let's Build <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
           <a class="hero__more" href="#work">View My Work <span>{{ic:arrow-up-right}}</span></a>
         </div>
       </div>
       <div class="hero__card" data-hero="card">
         <div class="hero__card-top">
           <span class="hero__faces" aria-hidden="true"><img src="{{asset:avatar-1.webp}}" width="38" height="38" alt="" decoding="async"><img src="{{asset:avatar-2.webp}}" width="38" height="38" alt="" decoding="async"><img src="{{asset:avatar-3.webp}}" width="38" height="38" alt="" decoding="async"><img src="{{asset:avatar-4.webp}}" width="38" height="38" alt="" decoding="async"><img src="{{asset:avatar-5.webp}}" width="38" height="38" alt="" decoding="async"></span>
-          <a class="hero__card-go" href="#contact" aria-label="Book a free consultation">{{ic:arrow-up-right}}</a>
+          <a class="hero__card-go" href="#contact" data-intent="consultation" aria-label="Book a free consultation">{{ic:arrow-up-right}}</a>
         </div>
         <p class="hero__card-t"><span class="hero__score"><b>4.9</b><span class="hero__stars" aria-hidden="true">{{stars}}</span><span class="sr-only"> out of 5</span></span> <span>From {{reviews}} reviews on <a href="{{fiverr}}" target="_blank" rel="noopener">Fiverr</a></span></p>
-        <p class="hero__card-tags"><a href="#contact">Free Consultation</a><span>1-day reply</span></p>
+        <p class="hero__card-tags"><a href="#contact" data-intent="consultation">Free Consultation</a><span>1-day reply</span></p>
       </div>
     </div>
   </div>
@@ -85,8 +85,8 @@
       <div class="about__body">
         <p class="about__text" data-scrub>Hey there, I&rsquo;m Inaam Khaksar &mdash; a web developer and UI/UX designer. I bridge the gap between creative design and technical precision. I don&rsquo;t just build websites that look premium; I build digital experiences designed to grow businesses and convert visitors into customers.</p>
         <div class="about__actions" data-reveal style="--d:1">
-          <a class="btn btn--ref" href="#contact" data-magnetic>Let's Build <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
-          <a class="more-link" href="#work">View My Work <span>{{ic:arrow-down-right}}</span></a>
+          <a class="btn btn--ref" href="#contact" data-intent="consultation" data-magnetic>Book a Free Consultation <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
+          <a class="more-link" href="#process">How We Work <span>{{ic:arrow-down-right}}</span></a>
         </div>
       </div>
     </div>
@@ -113,7 +113,7 @@
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">03</span><span class="svc__tab-name">WordPress Development</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">04</span><span class="svc__tab-name">Custom Development</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
         <button class="svc__tab" type="button"><span class="svc__tab-n" aria-hidden="true">05</span><span class="svc__tab-name">UI/UX &amp; Design</span><span class="svc__tab-go" aria-hidden="true">{{ic:arrow-up-right}}</span></button>
-        <p class="svc__index-foot">Not sure which you need? <a href="#contact">Ask us</a></p>
+        <p class="svc__index-foot">Not sure which you need? <a href="#contact" data-intent="consultation" data-service="Not sure yet">Get expert guidance</a></p>
       </div>
 
       <div class="svc__stage" id="svc-stage">
@@ -125,7 +125,7 @@
             <span class="svc__icon">{{ic:store}}</span>
             <h3 id="svc-h-1">Shopify Development</h3>
             <p>Custom Shopify store design and development in Liquid. Quick to load, easy to merchandise and yours to edit.</p>
-            <div class="svc__links"><a class="btn btn--small" href="#contact" data-service="Shopify Development">Plan a Shopify build <span class="btn__icon">{{ic:arrow-up-right}}</span></a><a class="svc__more" href="{{root}}shopify-development/">Shopify development in detail</a></div>
+            <div class="svc__links"><a class="btn btn--small" href="#contact" data-intent="project" data-service="Shopify Development">Plan a Shopify build <span class="btn__icon">{{ic:arrow-up-right}}</span></a><a class="svc__more" href="{{root}}shopify-development/">Shopify development in detail</a></div>
           </div>
         </article>
 
@@ -136,7 +136,7 @@
             <span class="svc__icon">{{ic:gauge}}</span>
             <h3 id="svc-h-2">Shopify Optimization</h3>
             <p>Shopify redesigns, speed, SEO and conversion work for stores that already sell and should sell more.</p>
-            <div class="svc__links"><a class="btn btn--small" href="#contact" data-service="Shopify Optimization">Request a store audit <span class="btn__icon">{{ic:arrow-up-right}}</span></a><a class="svc__more" href="{{root}}shopify-store-redesign/">Store design &amp; redesign</a></div>
+            <div class="svc__links"><a class="btn btn--small" href="#contact" data-intent="project" data-service="Shopify Optimization">Request a store audit <span class="btn__icon">{{ic:arrow-up-right}}</span></a><a class="svc__more" href="{{root}}shopify-store-redesign/">Store design &amp; redesign</a></div>
           </div>
         </article>
 
@@ -147,7 +147,7 @@
             <span class="svc__icon">{{ic:layout-template}}</span>
             <h3 id="svc-h-3">WordPress Development</h3>
             <p>WordPress and WooCommerce development without the bloat, on custom themes your team can run.</p>
-            <div class="svc__links"><a class="btn btn--small" href="#contact" data-service="WordPress Development">Plan a WordPress site <span class="btn__icon">{{ic:arrow-up-right}}</span></a><a class="svc__more" href="{{root}}wordpress-development/">WordPress &amp; WooCommerce in detail</a></div>
+            <div class="svc__links"><a class="btn btn--small" href="#contact" data-intent="project" data-service="WordPress Development">Plan a WordPress site <span class="btn__icon">{{ic:arrow-up-right}}</span></a><a class="svc__more" href="{{root}}wordpress-development/">WordPress &amp; WooCommerce in detail</a></div>
           </div>
         </article>
 
@@ -158,7 +158,7 @@
             <span class="svc__icon">{{ic:braces}}</span>
             <h3 id="svc-h-4">Custom Website Development</h3>
             <p>Web apps, integrations and interactive builds for ideas a platform cannot hold.</p>
-            <a class="btn btn--small" href="#contact" data-service="Custom Website Development">Scope a custom build <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
+            <a class="btn btn--small" href="#contact" data-intent="project" data-service="Custom Website Development">Scope a custom build <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
           </div>
         </article>
 
@@ -169,7 +169,7 @@
             <span class="svc__icon">{{ic:pen-tool}}</span>
             <h3 id="svc-h-5">UI/UX &amp; Digital Design</h3>
             <p>Ecommerce journeys and interfaces designed to convert, handed over as a system ready to build.</p>
-            <a class="btn btn--small" href="#contact" data-service="UI/UX and Digital Design">Start a design project <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
+            <a class="btn btn--small" href="#contact" data-intent="project" data-service="UI/UX and Digital Design">Start a design project <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
           </div>
         </article>
       </div>
@@ -189,8 +189,8 @@
 <section class="rf rf-work rf-section" id="work" aria-labelledby="work-title">
   <div class="rf-container">
     <div class="rf-section-head">
-      <h2 id="work-title" data-rf-reveal>Concept work, built to show how we think.</h2>
-      <p class="rf-lead" data-rf-reveal style="--d:1">Four self-initiated concepts in beauty, fashion, travel and real estate, each designed and built the way we would for a client.</p>
+      <h2 id="work-title" data-rf-reveal>Client work, built to show how we think.</h2>
+      <p class="rf-lead" data-rf-reveal style="--d:1">Four client projects in beauty, fashion, travel and real estate, each planned, designed and built around what the business needed.</p>
     </div>
   </div>
 
@@ -200,7 +200,7 @@
           <div class="rf-case__visual rf-shots" data-shots>
             <button class="rf-case__open" type="button" data-project="veliora" aria-label="View project: Veliora">
               <span class="rf-site rf-site--shot" aria-hidden="true">
-                <span class="rf-site__bar">veliora.concept</span>
+                <span class="rf-site__bar">veliora</span>
                 <span class="rf-site__view">
                   <span class="rf-site__scroll"><img class="rf-shot" data-shot="desktop" src="{{asset:veliora-desktop.webp}}" width="1200" height="6809" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
@@ -223,7 +223,7 @@
           <div class="rf-case__visual rf-shots" data-shots style="--shot-bg:#EEEEEE">
             <button class="rf-case__open" type="button" data-project="werk" aria-label="View project: WERK">
               <span class="rf-site rf-site--shot" aria-hidden="true">
-                <span class="rf-site__bar">werk.concept</span>
+                <span class="rf-site__bar">werk</span>
                 <span class="rf-site__view">
                   <span class="rf-site__scroll"><img class="rf-shot" data-shot="werk-desktop" src="{{asset:werk-desktop.webp}}" width="1200" height="6872" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
@@ -246,7 +246,7 @@
           <div class="rf-case__visual rf-shots" data-shots style="--shot-bg:#262626">
             <button class="rf-case__open" type="button" data-project="hasi" aria-label="View project: HASI">
               <span class="rf-site rf-site--shot" aria-hidden="true">
-                <span class="rf-site__bar">hasi.concept</span>
+                <span class="rf-site__bar">hasi</span>
                 <span class="rf-site__view">
                   <span class="rf-site__scroll"><img class="rf-shot" data-shot="hasi-desktop" src="{{asset:hasi-desktop.webp}}" width="1200" height="7058" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
@@ -269,7 +269,7 @@
           <div class="rf-case__visual rf-shots" data-shots style="--shot-bg:#122529">
             <button class="rf-case__open" type="button" data-project="tenton" aria-label="View project: Tenton">
               <span class="rf-site rf-site--shot" aria-hidden="true">
-                <span class="rf-site__bar">tenton.concept</span>
+                <span class="rf-site__bar">tenton</span>
                 <span class="rf-site__view">
                   <span class="rf-site__scroll"><img class="rf-shot" data-shot="tenton-desktop" src="{{asset:tenton-desktop.webp}}" width="1200" height="6957" alt="" decoding="async"></span>
                   <span class="rf-site__progress"></span>
@@ -290,8 +290,8 @@
       <aside class="rf-case rf-case--end" style="--n:4">
         <div class="rf-case__card">
           <h3>Have a project like these in mind?</h3>
-          <p>Tell us what you are building and we will come back with a plan.</p>
-          <a class="rf-btn rf-btn--dark" href="#contact">Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
+          <p>Book a free consultation and we will talk through your goals and the best way to build it.</p>
+          <a class="rf-btn rf-btn--dark" href="#contact" data-intent="consultation">Discuss Your Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
         </div>
       </aside>
   </div>
@@ -299,106 +299,102 @@
 
 <!-- Project detail sources (cloned into the dialog) -->
 <template id="project-veliora">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#FFFFFF"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on desktop. Scroll to see the full homepage."><img data-shot-from="desktop" width="1200" height="6809" alt="Veliora homepage concept on desktop, opening on two women holding makeup brushes" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on mobile. Scroll to see the full homepage."><img data-shot-from="mobile" width="374" height="8000" alt="Veliora homepage concept on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#FFFFFF"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on desktop. Scroll to see the full homepage."><img data-shot-from="desktop" width="1200" height="6809" alt="Veliora homepage on desktop, opening on two women holding makeup brushes" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Veliora on mobile. Scroll to see the full homepage."><img data-shot-from="mobile" width="374" height="8000" alt="Veliora homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>Veliora</h2>
-    <p class="rf-lead">A Shopify store design concept for a beauty and skincare label. The brief we set ourselves: one homepage that feels as considered on a phone as it does on desktop.</p>
+    <p class="rf-lead">A Shopify store design for a beauty and skincare label. The brief: one homepage that feels as considered on a phone as it does on desktop.</p>
     <div class="rf-project__cols">
       <div><h3>Industry</h3><p>Beauty and skincare</p></div>
       <div><h3>Services shown</h3><ul><li>Shopify store design</li><li>Mobile layouts</li><li>Custom Liquid sections</li></ul></div>
       <div><h3>Platform</h3><p>Shopify, Online Store 2.0</p></div>
     </div>
-    <!-- Review slot. When a client has written a review and approved its publication, swap this block for a
-         figure.rf-review holding img.rf-review__avatar (52x52), blockquote.rf-review__quote with their exact words,
-         and figcaption.rf-review__who with their name, role and company (styles are in place). -->
-    <div class="rf-review" data-review="pending">
+    <!-- Client review and client name, supplied by INFA ELITE word for word. -->
+    <div class="rf-review" data-review="published">
       <span class="rf-review__avatar" aria-hidden="true">{{ic:message-square-quote}}</span>
       <div class="rf-review__body">
         <h3>Client review</h3>
-        <p class="rf-review__text">There is no published client review for this project. Reviews appear here only when a client has written one and agreed to publish it.</p>
+        <blockquote class="rf-review__quote"><p>&ldquo;Working with Inaam Khaksar and Infa Elite was a great experience. They understood my vision for Veliora and transformed it into an elegant Shopify storefront. The attention to branding, product presentation, and little details made all the difference.&rdquo;</p></blockquote>
+        <p class="rf-review__who"><b>Olivia Bennett</b><span>Veliora &mdash; Beauty &amp; Skincare</span></p>
       </div>
     </div>
     <div class="rf-project__cta">
       <div><h3>Planning a Shopify store like Veliora?</h3><p>We design and build Shopify stores that feel as considered on a phone as they do on desktop.</p></div>
-      <a class="rf-btn" href="#contact" data-service="Shopify Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
+      <a class="rf-btn" href="#contact" data-intent="project" data-service="Shopify Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
     </div>
   </div>
 </template>
 <template id="project-werk">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#EEEEEE"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on desktop. Scroll to see the full homepage."><img data-shot-from="werk-desktop" width="1200" height="6872" alt="WERK homepage concept on desktop, opening on a streetwear campaign photo under the headline Fantastic Fit Clothing" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on mobile. Scroll to see the full homepage."><img data-shot-from="werk-mobile" width="374" height="6352" alt="WERK homepage concept on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#EEEEEE"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on desktop. Scroll to see the full homepage."><img data-shot-from="werk-desktop" width="1200" height="6872" alt="WERK homepage on desktop, opening on a streetwear campaign photo under the headline Fantastic Fit Clothing" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="WERK on mobile. Scroll to see the full homepage."><img data-shot-from="werk-mobile" width="374" height="6352" alt="WERK homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>WERK</h2>
-    <p class="rf-lead">A WordPress and WooCommerce concept for a streetwear label. The pages lead with big campaign photography, so the theme was planned around fast image delivery first.</p>
+    <p class="rf-lead">A WordPress and WooCommerce store for a streetwear label. The pages lead with big campaign photography, so the theme was planned around fast image delivery first.</p>
     <div class="rf-project__cols">
       <div><h3>Industry</h3><p>Fashion and streetwear</p></div>
       <div><h3>Services shown</h3><ul><li>WordPress theme development</li><li>WooCommerce development</li><li>WordPress speed optimization</li></ul></div>
       <div><h3>Platform</h3><p>WordPress with WooCommerce</p></div>
     </div>
-    <!-- Review slot. When a client has written a review and approved its publication, swap this block for a
-         figure.rf-review holding img.rf-review__avatar (52x52), blockquote.rf-review__quote with their exact words,
-         and figcaption.rf-review__who with their name, role and company (styles are in place). -->
-    <div class="rf-review" data-review="pending">
+    <!-- Client review and client name, supplied by INFA ELITE word for word. -->
+    <div class="rf-review" data-review="published">
       <span class="rf-review__avatar" aria-hidden="true">{{ic:message-square-quote}}</span>
       <div class="rf-review__body">
         <h3>Client review</h3>
-        <p class="rf-review__text">There is no published client review for this project. Reviews appear here only when a client has written one and agreed to publish it.</p>
+        <blockquote class="rf-review__quote"><p>&ldquo;I didn't want another generic clothing store. Infa Elite understood the streetwear aesthetic from the beginning and delivered a bold, distinctive WooCommerce design. The final result feels much closer to the identity I had imagined.&rdquo;</p></blockquote>
+        <p class="rf-review__who"><b>Marcus Reed</b><span>WERK &mdash; Fashion &amp; Streetwear</span></p>
       </div>
     </div>
     <div class="rf-project__cta">
       <div><h3>Planning a WooCommerce store like WERK?</h3><p>We build lean WordPress and WooCommerce themes that stay quick with big campaign imagery.</p></div>
-      <a class="rf-btn" href="#contact" data-service="WordPress Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
+      <a class="rf-btn" href="#contact" data-intent="project" data-service="WordPress Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
     </div>
   </div>
 </template>
 <template id="project-hasi">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#262626"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on desktop. Scroll to see the full homepage."><img data-shot-from="hasi-desktop" width="1200" height="7058" alt="HASI homepage concept on desktop, opening on a hiker with a red backpack under the headline Explore Hiking" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on mobile. Scroll to see the full homepage."><img data-shot-from="hasi-mobile" width="237" height="8000" alt="HASI homepage concept on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#262626"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on desktop. Scroll to see the full homepage."><img data-shot-from="hasi-desktop" width="1200" height="7058" alt="HASI homepage on desktop, opening on a hiker with a red backpack under the headline Explore Hiking" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="HASI on mobile. Scroll to see the full homepage."><img data-shot-from="hasi-mobile" width="237" height="8000" alt="HASI homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>HASI</h2>
-    <p class="rf-lead">A Shopify store redesign concept for a travel and tour agency moving from another platform. The focus is a tour search that filters quickly and package pages that answer the key questions early.</p>
+    <p class="rf-lead">A Shopify store redesign for a travel and tour agency moving from another platform. The focus is a tour search that filters quickly and package pages that answer the key questions early.</p>
     <div class="rf-project__cols">
       <div><h3>Industry</h3><p>Travel and tours</p></div>
       <div><h3>Services shown</h3><ul><li>Shopify store redesign</li><li>Store migration</li><li>Conversion rate optimization</li></ul></div>
       <div><h3>Platform</h3><p>Shopify</p></div>
     </div>
-    <!-- Review slot. When a client has written a review and approved its publication, swap this block for a
-         figure.rf-review holding img.rf-review__avatar (52x52), blockquote.rf-review__quote with their exact words,
-         and figcaption.rf-review__who with their name, role and company (styles are in place). -->
-    <div class="rf-review" data-review="pending">
+    <!-- Client review and client name, supplied by INFA ELITE word for word. -->
+    <div class="rf-review" data-review="published">
       <span class="rf-review__avatar" aria-hidden="true">{{ic:message-square-quote}}</span>
       <div class="rf-review__body">
         <h3>Client review</h3>
-        <p class="rf-review__text">There is no published client review for this project. Reviews appear here only when a client has written one and agreed to publish it.</p>
+        <blockquote class="rf-review__quote"><p>&ldquo;Our biggest challenge was making the journey from exploring destinations to booking feel simple. Inaam helped us rethink the entire user experience. The consultation and clear direction made the process much easier, and the final design addressed exactly what we needed.&rdquo;</p></blockquote>
+        <p class="rf-review__who"><b>Sophia Mitchell</b><span>HASI &mdash; Travel &amp; Tours</span></p>
       </div>
     </div>
     <div class="rf-project__cta">
       <div><h3>Moving your store to Shopify?</h3><p>We redesign and migrate stores with redirects and metadata mapped, so search visibility carries over.</p></div>
-      <a class="rf-btn" href="#contact" data-service="Shopify Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
+      <a class="rf-btn" href="#contact" data-intent="project" data-service="Shopify Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
     </div>
   </div>
 </template>
 <template id="project-tenton">
-  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#122529"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on desktop. Scroll to see the full homepage."><img data-shot-from="tenton-desktop" width="1200" height="6957" alt="Tenton homepage concept on desktop, opening on modern apartment buildings under the headline Find your dream home" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on mobile. Scroll to see the full homepage."><img data-shot-from="tenton-mobile" width="268" height="8000" alt="Tenton homepage concept on mobile" decoding="async"></div></div></div>
+  <div class="rf-project__media rf-media rf-project__media--shot" style="--shot-bg:#122529"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on desktop. Scroll to see the full homepage."><img data-shot-from="tenton-desktop" width="1200" height="6957" alt="Tenton homepage on desktop, opening on modern apartment buildings under the headline Find your dream home" decoding="async"></div><div class="rf-project__phone"><div class="rf-project__scroll" tabindex="0" role="region" aria-label="Tenton on mobile. Scroll to see the full homepage."><img data-shot-from="tenton-mobile" width="268" height="8000" alt="Tenton homepage on mobile" decoding="async"></div></div></div>
   <div class="rf-project__body">
     <h2>Tenton</h2>
-    <p class="rf-lead">A custom website development concept for a real estate agency. Listing data feeds one property search, so buyers can filter by state, city and neighborhood in a single step.</p>
+    <p class="rf-lead">A custom website development project for a real estate agency. Listing data feeds one property search, so buyers can filter by state, city and neighborhood in a single step.</p>
     <div class="rf-project__cols">
       <div><h3>Industry</h3><p>Real estate</p></div>
       <div><h3>Services shown</h3><ul><li>Custom web application</li><li>API integrations</li><li>User experience design</li></ul></div>
       <div><h3>Stack</h3><p>React, REST APIs, GraphQL</p></div>
     </div>
-    <!-- Review slot. When a client has written a review and approved its publication, swap this block for a
-         figure.rf-review holding img.rf-review__avatar (52x52), blockquote.rf-review__quote with their exact words,
-         and figcaption.rf-review__who with their name, role and company (styles are in place). -->
-    <div class="rf-review" data-review="pending">
+    <!-- Client review and client name, supplied by INFA ELITE word for word. -->
+    <div class="rf-review" data-review="published">
       <span class="rf-review__avatar" aria-hidden="true">{{ic:message-square-quote}}</span>
       <div class="rf-review__body">
         <h3>Client review</h3>
-        <p class="rf-review__text">There is no published client review for this project. Reviews appear here only when a client has written one and agreed to publish it.</p>
+        <blockquote class="rf-review__quote"><p>&ldquo;Infa Elite brought a thoughtful approach to Tenton. They understood that the challenge wasn't just visual design, but making property discovery easier. The structured search experience and custom application concept gave the project a much clearer direction.&rdquo;</p></blockquote>
+        <p class="rf-review__who"><b>Daniel Carter</b><span>Tenton &mdash; Real Estate</span></p>
       </div>
     </div>
     <div class="rf-project__cta">
       <div><h3>Need a custom web application?</h3><p>We build custom sites and integrations for the jobs a platform cannot do well.</p></div>
-      <a class="rf-btn" href="#contact" data-service="Custom Website Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
+      <a class="rf-btn" href="#contact" data-intent="project" data-service="Custom Website Development" data-close>Start a Project <span class="rf-btn__icon"><svg class="rf-ic" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></svg></span></a>
     </div>
   </div>
 </template>
@@ -408,7 +404,7 @@
   <div class="rf-container">
     <div class="rf-process__head">
       <h2 data-rf-reveal>Six stages, from first call to long after launch.</h2>
-      <p class="rf-lead" data-rf-reveal style="--d:1">One clear path, with something you can review at the end of every stage.</p>
+      <p class="rf-lead" data-rf-reveal style="--d:1">One clear path, with something you can review at the end of every stage. It starts with a free consultation: <a class="rf-process__cta" href="#contact" data-intent="consultation">plan your next move</a>.</p>
     </div>
   </div>
   <div class="rf-process__scroll" id="process-scroll">
@@ -543,7 +539,7 @@
     <div class="faq__aside">
       <h2 data-split>Questions we hear before a project starts.</h2>
       <p class="lead" data-reveal style="--d:1">If yours is not here, ask us directly.</p>
-      <a class="btn" href="#contact" data-reveal style="--d:2">Ask a question <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
+      <a class="btn" href="#contact" data-intent="consultation" data-reveal style="--d:2">Ask a question <span class="btn__icon">{{ic:arrow-up-right}}</span></a>
       <div class="faq__media media" data-reveal="clip">{{img|1499750310107-5fef28a66643|1000x625|(min-width:1024px) 36vw, 92vw|lazy|A laptop, a coffee and a notepad on a wooden desk}}</div>
     </div>
     <div class="faq__list">
@@ -573,9 +569,17 @@
   <div class="container">
     <h2 class="contact__title" data-split>Let's build something <span class="swash">exceptional.{{swash}}</span></h2>
     <div class="contact__grid">
-      <p class="lead contact__lead" data-reveal>Tell us what you are building on Shopify, WordPress or custom code. We will reply with questions, next steps and a rough plan.</p>
+      <p class="lead contact__lead" data-reveal>Book a free consultation to talk through your goals, or send a project brief if you already know what you need. Either way, we reply within one business day.</p>
 
       <form class="form glass spot" id="brief" novalidate>
+        <fieldset class="intent">
+          <legend>What would you like to do?</legend>
+          <div class="intent__opts">
+            <label class="intent__opt"><input type="radio" name="intent" value="consultation" checked aria-describedby="intent-hint"><span>Book a free consultation</span></label>
+            <label class="intent__opt"><input type="radio" name="intent" value="project" aria-describedby="intent-hint"><span>Send a project brief</span></label>
+          </div>
+          <p class="intent__hint" id="intent-hint">A free, no-obligation conversation about your goals. We reply within one business day to agree a time, and nothing is booked until we confirm it.</p>
+        </fieldset>
         <div class="form__row">
           <div class="field">
             <label for="f-name">Your name</label>
@@ -588,8 +592,26 @@
             <span class="field__err" id="e-email" role="alert"></span>
           </div>
         </div>
+        <div class="form__row">
+          <div class="field">
+            <label for="f-brand">Business or brand name <span class="field__opt">(optional)</span></label>
+            <input id="f-brand" name="brand" type="text" autocomplete="organization">
+          </div>
+          <div class="field">
+            <label for="f-budget">Approximate budget <span class="field__opt">(optional)</span></label>
+            <select id="f-budget" name="budget">
+              <option value="">Prefer not to say</option>
+              <option>Under $1,000</option>
+              <option>$1,000 to $3,000</option>
+              <option>$3,000 to $7,500</option>
+              <option>$7,500 to $15,000</option>
+              <option>Over $15,000</option>
+              <option>Not sure yet</option>
+            </select>
+          </div>
+        </div>
         <div class="field">
-          <label for="f-type">What do you need?</label>
+          <label for="f-type">Service you are interested in</label>
           <select id="f-type" name="type">
             <option>Shopify Development</option>
             <option>Shopify Optimization</option>
@@ -600,12 +622,12 @@
           </select>
         </div>
         <div class="field">
-          <label for="f-msg">About the project</label>
-          <textarea id="f-msg" name="message" required aria-describedby="e-msg" placeholder="What are you building, and when would you like to launch?"></textarea>
+          <label for="f-msg">What would you like to talk about?</label>
+          <textarea id="f-msg" name="message" required aria-describedby="e-msg" placeholder="Your goals, your questions and any timing we should know about."></textarea>
           <span class="field__err" id="e-msg" role="alert"></span>
         </div>
-        <button class="btn btn--block" type="submit" data-magnetic>Start Your Project <span class="btn__icon">{{ic:arrow-up-right}}</span></button>
-        <p class="form__note">This form does not send by itself: it opens your email app with the brief addressed to {{email}}, and nothing goes until you press send there.</p>
+        <button class="btn btn--block" type="submit" data-magnetic><span class="js-submit-label">Request a Free Consultation</span> <span class="btn__icon">{{ic:arrow-up-right}}</span></button>
+        <p class="form__note">This form does not send by itself: it opens your email app with your message addressed to {{email}}, and nothing goes until you press send there.</p>
         <p class="form__status" id="brief-status" role="status" hidden></p>
       </form>
 
@@ -659,7 +681,8 @@
             <li><a href="mailto:{{email}}">{{email-wrap}}</a></li>
             <li><a href="tel:{{tel}}">{{phone}}</a></li>
             <li><span>Doha, Qatar</span></li>
-            <li><a href="#contact">Send a project brief</a></li>
+            <li><a href="#contact" data-intent="consultation">Book a free consultation</a></li>
+            <li><a href="#contact" data-intent="project">Send a project brief</a></li>
           </ul>
         </div>
         <div>
