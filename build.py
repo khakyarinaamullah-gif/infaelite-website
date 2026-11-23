@@ -26,7 +26,10 @@ GTM_ID = 'GTM-T8SR49TW'
 # Search Console ownership tag for the github.io property. Keep it: removing it un-verifies the property.
 GSC_VERIFY = '2ykQ3kCeqvnUFkXIOyi57XElIFzcvBtiZyMC7p91g-Q'
 # Date the page content last changed: sitemap lastmod and dateModified in the structured data.
-LASTMOD = '2026-11-22'
+LASTMOD = '2026-11-23'
+# IndexNow key (Bing, Yandex and other IndexNow engines). It is public by design: the build publishes it as
+# <key>.txt at the site root, which proves the URLs submitted after a deploy belong to this site.
+INDEXNOW_KEY = 'b6c5d391b239ca52f333bea00eeab7e2'
 
 # Business details exactly as published on the previous INFA ELITE site (a5qux0-6r.myshopify.com).
 BIZ = {
@@ -263,6 +266,11 @@ def page_meta(p, r):
     t, d = html.escape(p['title']), html.escape(p['description'])
     robots = 'index, follow, max-image-preview:large, max-snippet:-1' if p.get('index', True) else 'noindex, follow'
     canonical = f'<link rel="canonical" href="{url}">\n' if p.get('index', True) else ''
+    # Sharing preview: each service page shows its own client project; the rest use the main picture.
+    og_url = f'<meta property="og:url" content="{url}">\n' if p.get('index', True) else ''
+    og_img = p.get('og_image') or 'og-image.jpg'
+    og_alt = html.escape(p.get('og_alt') or 'INFA ELITE: Shopify, WordPress and custom web development')
+    graph[0]['primaryImageOfPage'] = {'@type': 'ImageObject', 'url': SITE + og_img, 'width': 1200, 'height': 630}
     # The 404 page is served at whatever address was missing, so it sets its base to the site root:
     # "/" on the custom domain, "/<repository>/" on a github.io project address.
     base = ('<script>(function(){var p=location.pathname.split("/"),b=/\\.github\\.io$/.test(location.hostname)&&p[1]?"/"+p[1]+"/":"/";'
@@ -283,16 +291,16 @@ def page_meta(p, r):
 <meta property="og:site_name" content="INFA ELITE">
 <meta property="og:title" content="{t}">
 <meta property="og:description" content="{d}">
-<meta property="og:url" content="{url}">
-<meta property="og:image" content="{SITE}og-image.jpg">
+{og_url}<meta property="og:image" content="{SITE}{og_img}">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="INFA ELITE: Shopify, WordPress and custom web development">
+<meta property="og:image:alt" content="{og_alt}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{t}">
 <meta name="twitter:description" content="{d}">
-<meta name="twitter:image" content="{SITE}og-image.jpg">
-<meta name="twitter:image:alt" content="INFA ELITE: Shopify, WordPress and custom web development">
+<meta name="twitter:image" content="{SITE}{og_img}">
+<meta name="twitter:image:alt" content="{og_alt}">
 {icons(r)}
 <script>
 document.documentElement.classList.add('js');
@@ -316,7 +324,7 @@ def parse_page(path):
             trail.append((name, href if href else None))
     return {'slug': meta['slug'], 'title': meta['title'], 'description': meta['description'], 'current': meta.get('nav'),
             'service': meta.get('service'), 'trail': trail, 'index': meta.get('index', 'yes') == 'yes',
-            'priority': meta.get('priority', '0.8'), 'body': body}
+            'priority': meta.get('priority', '0.8'), 'og_image': meta.get('og-image'), 'og_alt': meta.get('og-alt'), 'body': body}
 
 
 def lazy(markup):
@@ -360,7 +368,7 @@ def build_site(dist):
     (dist / 'assets/brand/favicon-192.png').write_bytes(square_mark(192))
     (dist / 'assets/brand/apple-touch-icon.png').write_bytes(square_mark(180))
     (dist / 'favicon.ico').write_bytes(square_mark(48, 'ICO'))
-    shutil.copy(root / 'static/og-image.jpg', dist / 'og-image.jpg')
+    for og in sorted((root / 'static').glob('og-*.jpg')): shutil.copy(og, dist / og.name)
     shutil.copy(root / 'static/infa-elite-logo.png', dist / 'infa-elite-logo.png')
 
     def assemble(meta_html, body_html, r, label, extra_css=False):
@@ -411,6 +419,9 @@ def build_site(dist):
     urls = ''.join(f'  <url>\n    <loc>{SITE}{slug}</loc>\n    <lastmod>{LASTMOD}</lastmod>\n  </url>\n' for slug, pr in pages)
     (dist / 'sitemap.xml').write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
     (dist / '.nojekyll').write_text('')
+    # AI-readable overview (llmstxt.org format) and the IndexNow key file
+    (dist / 'llms.txt').write_text(finish(tokens(read('llms.md').replace('{{site}}', SITE)), 'llms.txt'))
+    (dist / f'{INDEXNOW_KEY}.txt').write_text(INDEXNOW_KEY)
     total = sum(f.stat().st_size for f in dist.rglob('*') if f.is_file())
     print(f'{dist}: {SITE} | {len(pages)} indexed pages, {len(used)} images, {total//1024} KB in total')
 

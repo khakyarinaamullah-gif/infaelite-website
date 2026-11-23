@@ -13,11 +13,14 @@ The site is static HTML, CSS and JavaScript. `build.py` assembles it from `src/`
 | `src/02-body.html` | Home page markup, including the shared header, menu and footer |
 | `src/03-script.html` | The site script (published, minified, as `assets/site.js`). GSAP, ScrollTrigger and Lenis come from `node_modules` and are published as `assets/vendor.js` |
 | `src/pages/*.html` | Other pages. The comment at the top of each file sets its address, title, description and breadcrumb |
+| `src/llms.md` | Template for `/llms.txt`, a plain Markdown overview of the agency for AI tools ([llmstxt.org](https://llmstxt.org/) format). `{{site}}` and the `BIZ` tokens are filled in at build time; keep it to facts the site itself states |
 | `src/pages/pages.css` | Styles for the service, policy and 404 pages (published as `assets/pages.css`, loaded only on those pages) |
 | `assets/` | Images and the display font. `NAME-<width>.webp` / `.avif` files are smaller copies for `srcset` |
 | `tools/responsive-images.mjs` | Makes those copies: `npm i --no-save sharp && node tools/responsive-images.mjs` after replacing an original |
 | `brand/` | Official INFA ELITE logo and logo mark, used unmodified |
-| `static/` | `og-image.jpg` and the logo file referenced by structured data |
+| `static/` | Social sharing images (`og-image.jpg` for most pages, `og-<page>.jpg` for the three service pages, all 1200×630) and the logo file referenced by structured data |
+| `tools/og-images.mjs` | Renders the sharing images with the official logo and real project screenshots: `node tools/og-images.mjs` |
+| `tools/indexnow.py` | Lists the pages a deploy adds or changes, for IndexNow (see below) |
 | `viz/` | Generators for the animated illustrations (they rewrite marked blocks in `src/`) |
 | `build.py` | The build. Business details (email, phone, registration, Fiverr figures) live in `BIZ` at the top; the Tag Manager container, Search Console tag and content date sit just above |
 
@@ -65,6 +68,13 @@ Add the domain in GitHub first, then at the DNS provider. GitHub recommends veri
 4. Check: `dig infaelite.com +noall +answer` lists the four A records, and `https://infaelite.com` and `https://www.infaelite.com` both load the site over HTTPS.
 
 5. Run the **Deploy site to GitHub Pages** workflow once more (Actions tab, *Run workflow*). The build reads the Pages address, so canonical URLs, the sitemap and structured data switch to `https://infaelite.com/`.
+
+## Search engines and sharing
+
+- **Open Graph and Twitter cards**: every page has its own title, description, canonical `og:url` and a 1200×630 image. A page picks its image with `og-image:` and `og-alt:` in its front matter; pages without one use `og-image.jpg`. The 404 page has no `og:url` because it is not indexed.
+- **llms.txt**: published at `/llms.txt`. It is an emerging convention for AI tools, not a ranking or citation factor.
+- **Bing Webmaster Tools**: the site was imported from Google Search Console, which also brought in the sitemap.
+- **IndexNow** (Bing and the other search engines that take part in IndexNow): `INDEXNOW_KEY` in `build.py` is published as `<key>.txt` at the site root. The key is public by design; it only proves that submitted URLs belong to this site. On each deploy the build job compares the new pages with the live ones, and once the deploy has finished the workflow sends only added or changed page addresses to `api.indexnow.org`. Nothing is sent when no page changed. A failed submission is reported in the run but does not undo the deploy. To change the key, set a new 32-character hex value and redeploy.
 
 ## Content notes
 
