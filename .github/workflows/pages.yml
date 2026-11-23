@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      indexnow: ${{ steps.indexnow.outputs.payload }}
     steps:
       - uses: actions/checkout@v6
 
@@ -55,7 +57,13 @@ jobs:
           test -f dist/404.html
           test -f dist/assets/vendor.js
           test -f dist/sitemap.xml
-          ! grep -rl '{{' dist --include=*.html --include=*.css --include=*.js
+          ! grep -rl '{{' dist --include=*.html --include=*.css --include=*.js --include=*.txt
+
+      # Compares the new pages with the live ones; only added or changed pages go to IndexNow after the deploy.
+      - name: Pages changed since the live version
+        id: indexnow
+        run: |
+          if [ -f tools/indexnow.py ]; then echo "payload=$(python tools/indexnow.py dist)" >> "$GITHUB_OUTPUT"; fi
 
       - uses: actions/upload-pages-artifact@v5
         with:
@@ -70,3 +78,18 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+      # IndexNow (Bing and other engines): submits only the pages listed by the build job. A failure here
+      # is reported but does not undo the deployment.
+      - name: Notify IndexNow of changed pages
+        if: needs.build.outputs.indexnow != ''
+        continue-on-error: true
+        env:
+          PAYLOAD: ${{ needs.build.outputs.indexnow }}
+        run: |
+          echo "$PAYLOAD"
+          sleep 20
+          code=$(curl -sS -o /tmp/indexnow.out -w '%{http_code}' -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' --data "$PAYLOAD")
+          echo "IndexNow answered HTTP $code"; cat /tmp/indexnow.out || true
+          test "$code" = 200 || test "$code" = 202
