@@ -988,6 +988,9 @@
     var gsap = window.gsap, ScrollTrigger = window.ScrollTrigger;
     if (!gsap || !ScrollTrigger) { document.documentElement.classList.add('no-gsap'); return; }
     gsap.registerPlugin(ScrollTrigger);
+    /* Trigger positions are measured once after load, when the fonts are in too (below); the library's own
+       measuring pass on the load event would only repeat that work. */
+    ScrollTrigger.config({ autoRefreshEvents: 'visibilitychange,DOMContentLoaded,resize' });
     var EXPO = 'expo.out', INOUT = 'expo.inOut';
     var once = function (trigger, start) { return { trigger: trigger, start: start || 'top 84%', once: true }; };
 
@@ -1183,8 +1186,10 @@
       });
     });
 
-    onLoad(function () { ScrollTrigger.sort(); ScrollTrigger.refresh(); });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
+    onLoad(function () {
+      var measure = function () { ScrollTrigger.sort(); ScrollTrigger.refresh(); };
+      if (document.fonts && document.fonts.status !== 'loaded') document.fonts.ready.then(measure); else measure();
+    });
 
     /* Content that grows or shrinks after load (FAQ answers, the sent form)
        moves everything below it, so trigger positions are measured again once the page settles. */
